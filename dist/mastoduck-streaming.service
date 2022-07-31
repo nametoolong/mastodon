@@ -1,15 +1,14 @@
 [Unit]
-Description=mastodon-streaming
+Description=mastoduck-streaming
 After=network.target
 
 [Service]
 Type=simple
 User=mastodon
 WorkingDirectory=/home/mastodon/live
-Environment="NODE_ENV=production"
+Environment="RAILS_ENV=production"
 Environment="PORT=4000"
-Environment="STREAMING_CLUSTER_NUM=1"
-ExecStart=/usr/bin/node ./streaming
+ExecStart=/home/mastodon/live/mastoduck/mastoduck
 TimeoutSec=15
 Restart=always
 # Proc filesystem

@@ -1,0 +1,3 @@
+[submodule "mastoduck"]
+	path = mastoduck
+	url = https://github.com/nametoolong/mastoduck
