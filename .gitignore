@@ -57,6 +57,10 @@
 # Ignore npm debug log
 npm-debug.log
 
+# Ignore yarn cache and option files
+.yarn/
+.yarnrc.yml
+
 # Ignore yarn log files
 yarn-error.log
 yarn-debug.log
