@@ -73,7 +73,7 @@ class FeedManager
   def unpush_from_home(account, status, update: false)
     return false unless remove_from_feed(:home, account.id, status, aggregate_reblogs: true)
 
-    redis.publish("timeline:#{account.id}", Oj.dump(event: :delete, payload: status.id.to_s)) unless update
+    redis.publish("timeline:#{account.id}", {event: :delete, payload: status.id.to_s}.to_bson.to_s) unless update
     true
   end
 
@@ -98,7 +98,7 @@ class FeedManager
   def unpush_from_list(list, status, update: false)
     return false unless remove_from_feed(:list, list.id, status, aggregate_reblogs: true)
 
-    redis.publish("timeline:list:#{list.id}", Oj.dump(event: :delete, payload: status.id.to_s)) unless update
+    redis.publish("timeline:list:#{list.id}", {event: :delete, payload: status.id.to_s}.to_bson.to_s) unless update
     true
   end
 

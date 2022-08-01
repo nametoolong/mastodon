@@ -13,7 +13,7 @@ class RemoveStatusService < BaseService
   # @option  [Boolean] :preserve
   # @option  [Boolean] :original_removed
   def call(status, **options)
-    @payload  = Oj.dump(event: :delete, payload: status.id.to_s)
+    @payload  = {event: :delete, payload: status.id.to_s}.to_bson.to_s
     @status   = status
     @account  = status.account
     @options  = options

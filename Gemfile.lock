@@ -130,6 +130,7 @@ GEM
     brpoplpush-redis_script (0.1.2)
       concurrent-ruby (~> 1.0, >= 1.0.5)
       redis (>= 1.0, <= 5.0)
+    bson (4.15.0)
     builder (3.2.4)
     bullet (7.0.3)
       activesupport (>= 3.0.0)
@@ -743,6 +744,7 @@ DEPENDENCIES
   bootsnap (~> 1.13.0)
   brakeman (~> 5.3)
   browser
+  bson (~> 4.15.0)
   bullet (~> 7.0)
   bundler-audit (~> 0.9)
   capistrano (~> 3.17)
