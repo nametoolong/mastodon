@@ -11,7 +11,7 @@ class PushEncryptedMessageWorker
     payload = {
       event: :encrypted_message,
       payload: message,
-      queued_at: (Time.now.to_f * 1000.0).to_i)
+      queued_at: (Time.now.to_f * 1000.0).to_i
     }.to_bson.to_s
 
     redis.publish(timeline_id, payload)
