@@ -36,8 +36,10 @@ class InstancePresenter
     Rails.cache.fetch('distinct_domain_count') { Instance.count }
   end
 
-  def sample_accounts
-    Rails.cache.fetch('sample_accounts', expires_in: 12.hours) { Account.local.discoverable.popular.limit(3) }
+  def sample_account_avatars
+    Rails.cache.fetch('sample_account_avatars', expires_in: 12.hours) {
+      Account.local.discoverable.popular.select(:avatar_file_name, :avatar_content_type, :avatar_file_size, :avatar_updated_at).limit(3)
+    }
   end
 
   def version_number
