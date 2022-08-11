@@ -26,8 +26,8 @@
                 %small= t('about.browse_directory')
 
               .avatar-stack
-                - @instance_presenter.sample_account_avatars.each do |account|
-                  = image_tag current_account&.user&.setting_auto_play_gif ? account.avatar_original_url : account.avatar_static_url, alt: '', class: 'account__avatar'
+                - @instance_presenter.sample_account_avatars.each do |avatar|
+                  = image_tag current_account&.user&.setting_auto_play_gif ? avatar[:avatar_original_url] : avatar[:avatar_static_url], alt: '', class: 'account__avatar'
 
         - if Setting.timeline_preview
           .directory__tag
