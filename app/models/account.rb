@@ -601,7 +601,7 @@ class Account < ApplicationRecord
   end
 
   def emojifiable_text
-    [note, display_name, fields.map(&:name), fields.map(&:value)].join(' ')
+    [note, display_name].concat(fields.flat_map { |f| [f.name, f.value] }).join(' ')
   end
 
   def clean_feed_manager
