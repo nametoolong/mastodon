@@ -97,7 +97,7 @@ RSpec.describe Api::V2::FiltersController, type: :controller do
       end
 
       it 'sends exactly one filters_changed event' do
-        expect(redis).to have_received(:publish).with("timeline:#{user.account.id}", Oj.dump(event: :filters_changed)).once
+        expect(redis).to have_received(:publish).with("timeline:#{user.account.id}", {event: :filters_changed}.to_bson.to_s).once
       end
     end
   end

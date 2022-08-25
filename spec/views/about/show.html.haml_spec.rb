@@ -27,7 +27,7 @@ describe 'about/show.html.haml', without_verify_partial_doubles: true do
       status_count: 69,
       active_user_count: 420,
       contact_account: nil,
-      sample_accounts: []
+      sample_account_avatars: []
     )
 
     assign(:instance_presenter, instance_presenter)

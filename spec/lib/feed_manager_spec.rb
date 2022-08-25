@@ -457,7 +457,7 @@ RSpec.describe FeedManager do
       allow(redis).to receive_messages(publish: nil)
       FeedManager.instance.unpush_from_home(receiver, status)
 
-      deletion = Oj.dump(event: :delete, payload: status.id.to_s)
+      deletion = {event: :delete, payload: status.id.to_s}.to_bson.to_s
       expect(redis).to have_received(:publish).with("timeline:#{receiver.id}", deletion)
     end
   end
