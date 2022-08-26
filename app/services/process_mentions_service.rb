@@ -25,6 +25,8 @@ class ProcessMentionsService < BaseService
 
   def scan_text!
     @status.text = @status.text.gsub(Account::MENTION_RE) do |match|
+      break if @current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
+
       username, domain = Regexp.last_match(1).split('@')
 
       domain = begin
@@ -66,6 +68,8 @@ class ProcessMentionsService < BaseService
   end
 
   def assign_mentions!
+    return if @current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
+
     @current_mentions.each do |mention|
       mention.save if mention.new_record?
     end

@@ -78,6 +78,9 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     process_status_params
     process_tags
+
+    return reject_payload! if @mentions.length > Status::MAX_MENTIONS_PER_STATUS
+
     process_audience
 
     ApplicationRecord.transaction do
@@ -198,6 +201,8 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     return if @object['tag'].nil?
 
     as_array(@object['tag']).each do |tag|
+      break if @mentions.length > Status::MAX_MENTIONS_PER_STATUS
+
       if equals_or_includes?(tag['type'], 'Hashtag')
         process_hashtag tag
       elsif equals_or_includes?(tag['type'], 'Mention')

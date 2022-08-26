@@ -76,6 +76,8 @@ class Status < ApplicationRecord
   has_one :status_stat, inverse_of: :status
   has_one :poll, inverse_of: :status, dependent: :destroy
 
+  MAX_MENTIONS_PER_STATUS = 60
+
   validates :uri, uniqueness: true, presence: true, unless: :local?
   validates :text, presence: true, unless: -> { with_media? || reblog? }
   validates_with StatusLengthValidator

@@ -182,6 +182,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     current_mentions  = []
 
     @raw_mentions.each do |href|
+      break if current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
+
       next if href.blank?
 
       account   = ActivityPub::TagManager.instance.uri_to_resource(href, Account)
@@ -194,6 +196,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
 
       current_mentions << mention
     end
+
+    return if current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
 
     current_mentions.each do |mention|
       mention.save if mention.new_record?
