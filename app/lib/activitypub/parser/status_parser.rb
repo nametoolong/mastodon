@@ -4,12 +4,9 @@ class ActivityPub::Parser::StatusParser
   include JsonLdHelper
 
   # @param [Hash] json
-  # @param [Hash] magic_values
-  # @option magic_values [String] :followers_collection
-  def initialize(json, magic_values = {})
+  def initialize(json)
     @json         = json
     @object       = json['object'] || json
-    @magic_values = magic_values
   end
 
   def uri
@@ -72,18 +69,6 @@ class ActivityPub::Parser::StatusParser
     @object['sensitive']
   end
 
-  def visibility
-    if audience_to.any? { |to| ActivityPub::TagManager.instance.public_collection?(to) }
-      :public
-    elsif audience_cc.any? { |cc| ActivityPub::TagManager.instance.public_collection?(cc) }
-      :unlisted
-    elsif audience_to.include?(@magic_values[:followers_collection])
-      :private
-    else
-      :direct
-    end
-  end
-
   def language
     if content_language_map?
       @object['contentMap'].keys.first
@@ -95,14 +80,6 @@ class ActivityPub::Parser::StatusParser
   end
 
   private
-
-  def audience_to
-    as_array(@object['to'] || @json['to']).map { |x| value_or_id(x) }
-  end
-
-  def audience_cc
-    as_array(@object['cc'] || @json['cc']).map { |x| value_or_id(x) }
-  end
 
   def summary_language_map?
     @object['summaryMap'].is_a?(Hash) && !@object['summaryMap'].empty?

@@ -14,13 +14,19 @@ class ActivityPub::Activity::Announce < ActivityPub::Activity
 
       return @status unless @status.nil?
 
+      audience_parser = ActivityPub::Parser::AudienceParser.new(
+        to: @json['to'],
+        cc: @json['cc'],
+        followers: @account.followers_url
+      )
+
       @status = Status.create!(
         account: @account,
         reblog: original_status,
         uri: @json['id'],
         created_at: @json['published'],
         override_timestamps: @options[:override_timestamps],
-        visibility: visibility_from_audience
+        visibility: audience_parser.visibility
       )
 
       Trends.register!(@status)
@@ -47,26 +53,6 @@ class ActivityPub::Activity::Announce < ActivityPub::Activity
 
   def reblog_by_following_group_account?(status)
     status.reblog? && status.account.group? && status.reblog.account.following?(status.account)
-  end
-
-  def audience_to
-    as_array(@json['to']).map { |x| value_or_id(x) }
-  end
-
-  def audience_cc
-    as_array(@json['cc']).map { |x| value_or_id(x) }
-  end
-
-  def visibility_from_audience
-    if audience_to.any? { |to| ActivityPub::TagManager.instance.public_collection?(to) }
-      :public
-    elsif audience_cc.any? { |cc| ActivityPub::TagManager.instance.public_collection?(cc) }
-      :unlisted
-    elsif audience_to.include?(@account.followers_url)
-      :private
-    else
-      :direct
-    end
   end
 
   def announceable?(status)

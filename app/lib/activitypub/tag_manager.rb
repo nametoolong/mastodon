@@ -12,8 +12,14 @@ class ActivityPub::TagManager
     public: 'https://www.w3.org/ns/activitystreams#Public',
   }.freeze
 
+  URIS_FOR_PUBLIC_COLLECTION = [
+    COLLECTIONS[:public],
+    'as:Public',
+    'Public'
+  ]
+
   def public_collection?(uri)
-    uri == COLLECTIONS[:public] || uri == 'as:Public' || uri == 'Public'
+    URIS_FOR_PUBLIC_COLLECTION.include?(uri)
   end
 
   def url_for(target)

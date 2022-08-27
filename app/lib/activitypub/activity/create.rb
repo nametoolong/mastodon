@@ -62,12 +62,16 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     @status
   end
 
-  def audience_to
-    as_array(@object['to'] || @json['to']).map { |x| value_or_id(x) }
+  def audience_parser
+    @audience_parser ||= ActivityPub::Parser::AudienceParser.new(
+      to: @object['to'] || @json['to'],
+      cc: @object['cc'] || @json['cc'],
+      followers: @account.followers_url
+    )
   end
 
-  def audience_cc
-    as_array(@object['cc'] || @json['cc']).map { |x| value_or_id(x) }
+  def all_audience
+    audience_parser.audience_to + audience_parser.audience_cc
   end
 
   def process_status
@@ -109,7 +113,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   end
 
   def process_status_params
-    @status_parser = ActivityPub::Parser::StatusParser.new(@json, followers_collection: @account.followers_url)
+    @status_parser = ActivityPub::Parser::StatusParser.new(@json)
 
     @params = begin
       {
@@ -124,7 +128,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
         override_timestamps: @options[:override_timestamps],
         reply: @status_parser.reply,
         sensitive: @account.sensitized? || @status_parser.sensitive || false,
-        visibility: @status_parser.visibility,
+        visibility: audience_parser.visibility,
         thread: replied_to_status,
         conversation: conversation_from_uri(@object['conversation']),
         media_attachment_ids: process_attachments.take(4).map(&:id),
@@ -136,7 +140,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   def process_audience
     # Unlike with tags, there is no point in resolving accounts we don't already
     # know here, because silent mentions would only be used for local access control anyway
-    accounts_in_audience = (audience_to + audience_cc).uniq.filter_map do |audience|
+    accounts_in_audience = all_audience.filter_map do |audience|
       account_from_uri(audience) unless ActivityPub::TagManager.instance.public_collection?(audience)
     end
 
@@ -403,7 +407,9 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   def addresses_local_accounts?
     return true if @options[:delivered_to_account_id]
 
-    local_usernames = (audience_to + audience_cc).uniq.select { |uri| ActivityPub::TagManager.instance.local_uri?(uri) }.map { |uri| ActivityPub::TagManager.instance.uri_to_local_id(uri, :username) }
+    local_usernames = all_audience.filter_map do |uri|
+      ActivityPub::TagManager.instance.uri_to_local_id(uri, :username) if ActivityPub::TagManager.instance.local_uri?(uri)
+    end
 
     return false if local_usernames.empty?
 
