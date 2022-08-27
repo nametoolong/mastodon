@@ -68,7 +68,10 @@ class ProcessMentionsService < BaseService
   end
 
   def assign_mentions!
-    return if @current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
+    if @current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
+      @status.active_mentions.update_all(silent: true)
+      return
+    end
 
     @current_mentions.each do |mention|
       mention.save if mention.new_record?
