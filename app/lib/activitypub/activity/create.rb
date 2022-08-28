@@ -154,9 +154,9 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     accounts_in_audience.each do |account|
       # This runs after tags are processed, and those translate into non-silent
       # mentions, which take precedence
-      next if @mentions.any? { |mention| mention.account_id == account.id }
+      next if @mentions.any? { |mention| mention[:account_id] == account.id }
 
-      @mentions << Mention.new(account: account, silent: true)
+      @mentions << {account_id: account.id, silent: true}
 
       # If there is at least one silent mention, then the status can be considered
       # as a limited-audience status, and not strictly a direct message, but only
@@ -166,7 +166,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     # Accounts that are tagged but are not in the audience are not
     # supposed to be notified explicitly
-    @silenced_account_ids = @mentions.map(&:account_id) - accounts_in_audience.map(&:id)
+    @silenced_account_ids = (@mentions.map { |item| item[:account_id] }) - accounts_in_audience.map(&:id)
   end
 
   def postprocess_audience_and_deliver
@@ -195,9 +195,16 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     # not a big deal
     Trends.tags.register(status)
 
-    @mentions.each do |mention|
-      mention.status = status
-      mention.save
+    default_attributes = {
+      status_id: @status.id,
+      created_at: Time.now,
+      updated_at: Time.now
+    }
+    @mentions.map! { |item| item.merge!(default_attributes) }
+
+    unless @mentions.empty?
+      Mention.insert_all!(@mentions, returning: false)
+      @status.mentions.reload
     end
   end
 
@@ -235,7 +242,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     return if account.nil?
 
-    @mentions << Mention.new(account: account, silent: false)
+    @mentions << {account_id: account.id, silent: false}
   end
 
   def process_emoji(tag)

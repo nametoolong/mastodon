@@ -178,7 +178,10 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   end
 
   def update_mentions!
-    previous_mentions = @status.active_mentions.includes(:account).to_a
+    mention_attributes = [:id, :account_id, :status_id]
+    previous_mentions = @status.active_mentions.pluck(*mention_attributes).map! do |item|
+      mention_attributes.zip(item).to_h
+    end
     current_mentions  = []
 
     @raw_mentions.each do |href|
@@ -191,8 +194,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
 
       next if account.nil?
 
-      mention   = previous_mentions.find { |x| x.account_id == account.id }
-      mention ||= account.mentions.new(status: @status)
+      mention   = previous_mentions.find { |x| x[:account_id] == account.id }
+      mention ||= {account_id: account.id}
 
       current_mentions << mention
     end
@@ -202,8 +205,18 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
       return
     end
 
-    current_mentions.each do |mention|
-      mention.save if mention.new_record?
+    default_attributes = {
+      status_id: @status.id,
+      created_at: Time.now,
+      updated_at: Time.now
+    }
+    new_mentions = current_mentions.filter_map do |item|
+      item.merge(default_attributes) unless item.include?(:id)
+    end
+
+    unless new_mentions.empty?
+      Mention.insert_all!(new_mentions, returning: false)
+      @status.mentions.reload
     end
 
     # If previous mentions are no longer contained in the text, convert them
@@ -211,7 +224,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     # received a notification might be more confusing
     removed_mentions = previous_mentions - current_mentions
 
-    Mention.where(id: removed_mentions.map(&:id)).update_all(silent: true) unless removed_mentions.empty?
+    Mention.where(id: removed_mentions.map { |item| item[:id] }).update_all(silent: true) unless removed_mentions.empty?
   end
 
   def update_emojis!
