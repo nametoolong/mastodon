@@ -98,7 +98,7 @@ class LinkDetailsExtractor
     end
 
     def json
-      @json ||= root_array(Oj.load(@data)).find { |obj| SUPPORTED_TYPES.include?(obj['@type']) } || {}
+      @json ||= root_array(Oj.load(@data) || {}).find { |obj| SUPPORTED_TYPES.include?(obj['@type']) } || {}
     end
   end
 
