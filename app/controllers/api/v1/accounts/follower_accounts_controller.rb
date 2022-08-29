@@ -7,7 +7,7 @@ class Api::V1::Accounts::FollowerAccountsController < Api::BaseController
 
   def index
     @accounts = load_accounts
-    render json: @accounts, each_serializer: REST::AccountSerializer
+    render json: REST::AccountSerializer.render(@accounts)
   end
 
   private

@@ -1,7 +1,21 @@
 # frozen_string_literal: true
 
-class REST::SearchSerializer < ActiveModel::Serializer
-  has_many :accounts, serializer: REST::AccountSerializer
-  has_many :statuses, serializer: REST::StatusSerializer
-  has_many :hashtags, serializer: REST::TagSerializer
+class REST::SearchSerializer < Blueprinter::Base
+  association :accounts, blueprint: REST::AccountSerializer do |object|
+    object[:accounts]
+  end
+
+  field :statuses do |object|
+    ActiveModel::Serializer::CollectionSerializer.new(
+      object[:statuses],
+      serializer: REST::StatusSerializer
+    ).as_json
+  end
+
+  field :hashtags do |object|
+    ActiveModel::Serializer::CollectionSerializer.new(
+      object[:hashtags],
+      serializer: REST::TagSerializer
+    ).as_json
+  end
 end

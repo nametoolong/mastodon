@@ -5,7 +5,7 @@ class Api::V1::DirectoriesController < Api::BaseController
   before_action :set_accounts
 
   def show
-    render json: @accounts, each_serializer: REST::AccountSerializer
+    render json: REST::AccountSerializer.render(@accounts)
   end
 
   private

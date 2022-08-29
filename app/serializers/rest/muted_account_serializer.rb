@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 class REST::MutedAccountSerializer < REST::AccountSerializer
-  field :mute_expires_at do |object|
-    mute = current_user.account.mute_relationships.find_by(target_account_id: object.id)
+  field :mute_expires_at do |object, options|
+    mute = options[:mute][object.id]
     mute && !mute.expired? ? mute.expires_at : nil
   end
 end

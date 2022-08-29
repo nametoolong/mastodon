@@ -3,7 +3,7 @@
 class REST::StatusEditSerializer < ActiveModel::Serializer
   include FormattingHelper
 
-  has_one :account, serializer: REST::AccountSerializer
+  attribute :account
 
   attributes :content, :spoiler_text, :sensitive, :created_at
 
@@ -18,5 +18,9 @@ class REST::StatusEditSerializer < ActiveModel::Serializer
 
   def poll
     { options: object.poll_options.map { |title| { title: title } } }
+  end
+
+  def account
+    REST::AccountSerializer.render_as_json(object.account)
   end
 end

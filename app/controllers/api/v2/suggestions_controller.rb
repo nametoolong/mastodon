@@ -8,7 +8,7 @@ class Api::V2::SuggestionsController < Api::BaseController
   before_action :set_suggestions
 
   def index
-    render json: @suggestions, each_serializer: REST::SuggestionSerializer
+    render json: REST::SuggestionSerializer.render(@suggestions)
   end
 
   private

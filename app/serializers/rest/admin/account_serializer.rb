@@ -4,13 +4,12 @@ class REST::Admin::AccountSerializer < ActiveModel::Serializer
   attributes :id, :username, :domain, :created_at,
              :email, :ip, :role, :confirmed, :suspended,
              :silenced, :disabled, :approved, :locale,
-             :invite_request
+             :invite_request, :account
 
   attribute :created_by_application_id, if: :created_by_application?
   attribute :invited_by_account_id, if: :invited?
 
   has_many :ips, serializer: REST::Admin::IpSerializer
-  has_one :account, serializer: REST::AccountSerializer
 
   def id
     object.id.to_s
@@ -45,7 +44,7 @@ class REST::Admin::AccountSerializer < ActiveModel::Serializer
   end
 
   def account
-    object
+    REST::AccountSerializer.render_as_json(object)
   end
 
   def locale

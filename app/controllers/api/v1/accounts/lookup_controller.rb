@@ -5,7 +5,7 @@ class Api::V1::Accounts::LookupController < Api::BaseController
   before_action :set_account
 
   def show
-    render json: @account, serializer: REST::AccountSerializer
+    render json: REST::AccountSerializer.render(@account)
   end
 
   private

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-class REST::SuggestionSerializer < ActiveModel::Serializer
-  attributes :source
+class REST::SuggestionSerializer < Blueprinter::Base
+  field :source
 
-  has_one :account, serializer: REST::AccountSerializer
+  association :account, blueprint: REST::AccountSerializer
 end

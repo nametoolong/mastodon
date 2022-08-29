@@ -20,7 +20,7 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
   belongs_to :reblog, serializer: REST::StatusSerializer
   belongs_to :application, if: :show_application?
-  belongs_to :account, serializer: REST::AccountSerializer
+  attribute :account
 
   has_many :ordered_media_attachments, key: :media_attachments, serializer: REST::MediaAttachmentSerializer
   has_many :ordered_mentions, key: :mentions
@@ -142,6 +142,10 @@ class REST::StatusSerializer < ActiveModel::Serializer
 
   def ordered_mentions
     object.active_mentions.to_a.sort_by(&:id)
+  end
+
+  def account
+    REST::AccountSerializer.render_as_json(object.account)
   end
 
   class ApplicationSerializer < ActiveModel::Serializer

@@ -8,8 +8,7 @@ class Api::V2::SearchController < Api::BaseController
   before_action -> { authorize_if_got_token! :read, :'read:search' }
 
   def index
-    @search = Search.new(search_results)
-    render json: @search, serializer: REST::SearchSerializer
+    render json: REST::SearchSerializer.render(search_results)
   rescue Mastodon::SyntaxError
     unprocessable_entity
   rescue ActiveRecord::RecordNotFound

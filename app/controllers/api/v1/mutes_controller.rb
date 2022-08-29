@@ -7,7 +7,8 @@ class Api::V1::MutesController < Api::BaseController
 
   def index
     @accounts = load_accounts
-    render json: @accounts, each_serializer: REST::MutedAccountSerializer
+    mutes = current_user.account.mute_relationships.where(target_account_id: @accounts.map(&:id)).index_by(&:target_account_id)
+    render json: REST::MutedAccountSerializer.render(@accounts, mutes: mutes)
   end
 
   private

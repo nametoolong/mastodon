@@ -8,11 +8,11 @@ class REST::InstanceSerializer < ActiveModel::Serializer
              :languages, :registrations, :approval_required, :invites_enabled,
              :configuration
 
-  has_one :contact_account, serializer: REST::AccountSerializer
+  attribute :contact_account
 
   has_many :rules, serializer: REST::RuleSerializer
 
-  delegate :contact_account, :rules, to: :instance_presenter
+  delegate :rules, to: :instance_presenter
 
   def uri
     Rails.configuration.x.local_domain
@@ -94,6 +94,10 @@ class REST::InstanceSerializer < ActiveModel::Serializer
 
   def invites_enabled
     UserRole.everyone.can?(:invite_users)
+  end
+
+  def contact_account
+    REST::AccountSerializer.render_as_json(instance_presenter.contact_account)
   end
 
   private

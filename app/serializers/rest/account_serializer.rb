@@ -88,14 +88,16 @@ class REST::AccountSerializer < Blueprinter::Base
   end
 
   field :fields do |object|
-    return [] if object.suspended?
-
-    object.fields.map do |field|
-      {
-        "name": field.name,
-        "value": account_field_value_format(field),
-        "verified_at": field.verified_at
-      }
+    if object.suspended?
+      []
+    else
+      object.fields.map do |field|
+        {
+          "name": field.name,
+          "value": account_field_value_format(field),
+          "verified_at": field.verified_at
+        }
+      end
     end
   end
 end
