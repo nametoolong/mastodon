@@ -216,6 +216,7 @@ module ApplicationHelper
       state_params[:current_account]   = current_account
       state_params[:token]             = current_session.token
       state_params[:admin]             = Account.find_local(Setting.site_contact_username.strip.gsub(/\A@/, ''))
+      state_params[:role]              = current_account.user_role
     end
 
     json = InitialStateSerializer.render(state_params)

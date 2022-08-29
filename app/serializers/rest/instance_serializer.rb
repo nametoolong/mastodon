@@ -97,7 +97,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
   end
 
   def contact_account
-    REST::AccountSerializer.render_as_json(instance_presenter.contact_account)
+    REST::AccountSerializer.render_as_json(instance_presenter.contact_account) if instance_presenter.contact_account
   end
 
   private

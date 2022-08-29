@@ -6,9 +6,7 @@ class Api::V1::MutesController < Api::BaseController
   after_action :insert_pagination_headers
 
   def index
-    @accounts = load_accounts
-    mutes = current_user.account.mute_relationships.where(target_account_id: @accounts.map(&:id)).index_by(&:target_account_id)
-    render json: REST::MutedAccountSerializer.render(@accounts, mutes: mutes)
+    render json: REST::MutedAccountSerializer.render(load_accounts, mutes: paginated_mutes.index_by(&:target_account_id))
   end
 
   private

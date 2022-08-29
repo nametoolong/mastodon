@@ -21,6 +21,6 @@ class REST::StatusEditSerializer < ActiveModel::Serializer
   end
 
   def account
-    REST::AccountSerializer.render_as_json(object.account)
+    REST::AccountSerializer.render_as_json(object.account) if object.account
   end
 end

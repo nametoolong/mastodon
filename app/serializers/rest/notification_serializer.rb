@@ -20,6 +20,6 @@ class REST::NotificationSerializer < ActiveModel::Serializer
   end
 
   def from_account
-    REST::AccountSerializer.render_as_json(object.from_account)
+    REST::AccountSerializer.render_as_json(object.from_account) if object.from_account
   end
 end
