@@ -48,7 +48,7 @@ class AboutController < ApplicationController
   end
 
   def new_user
-    User.new.tap do |user|
+    @new_user ||= User.new.tap do |user|
       user.build_account
       user.build_invite_request
     end
