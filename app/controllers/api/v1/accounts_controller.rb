@@ -18,7 +18,7 @@ class Api::V1::AccountsController < Api::BaseController
   override_rate_limit_headers :follow, family: :follows
 
   def show
-    render json: @account, serializer: REST::AccountSerializer
+    render json: REST::AccountSerializer.render_as_json(@account)
   end
 
   def create

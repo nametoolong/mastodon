@@ -1,111 +1,101 @@
 # frozen_string_literal: true
 
-class REST::AccountSerializer < ActiveModel::Serializer
-  include RoutingHelper
-  include FormattingHelper
+class REST::AccountSerializer < Blueprinter::Base
+  extend FormattingHelper
+  extend StaticRoutingHelper
 
-  attributes :id, :username, :acct, :display_name, :locked, :bot, :discoverable, :group, :created_at,
-             :note, :url, :avatar, :avatar_static, :header, :header_static,
-             :followers_count, :following_count, :statuses_count, :last_status_at
+  fields :username, :group, :followers_count, :following_count, :statuses_count
 
-  has_one :moved_to_account, key: :moved, serializer: REST::AccountSerializer, if: :moved_and_not_nested?
-
-  has_many :emojis, serializer: REST::CustomEmojiSerializer
-
-  attribute :suspended, if: :suspended?
-  attribute :silenced, key: :limited, if: :silenced?
-
-  class FieldSerializer < ActiveModel::Serializer
-    include FormattingHelper
-
-    attributes :name, :value, :verified_at
-
-    def value
-      account_field_value_format(object)
-    end
-  end
-
-  has_many :fields
-
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def acct
+  field :acct do |object|
     object.pretty_acct
   end
 
-  def note
-    object.suspended? ? '' : account_bio_format(object)
-  end
-
-  def url
-    ActivityPub::TagManager.instance.url_for(object)
-  end
-
-  def avatar
-    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_original_url)
-  end
-
-  def avatar_static
-    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_static_url)
-  end
-
-  def header
-    full_asset_url(object.suspended? ? object.header.default_url : object.header_original_url)
-  end
-
-  def header_static
-    full_asset_url(object.suspended? ? object.header.default_url : object.header_static_url)
-  end
-
-  def created_at
-    object.created_at.midnight.as_json
-  end
-
-  def last_status_at
-    object.last_status_at&.to_date&.iso8601
-  end
-
-  def display_name
+  field :display_name do |object|
     object.suspended? ? '' : object.display_name
   end
 
-  def locked
+  field :locked do |object|
     object.suspended? ? false : object.locked
   end
 
-  def bot
+  field :bot do |object|
     object.suspended? ? false : object.bot
   end
 
-  def discoverable
+  field :discoverable do |object|
     object.suspended? ? false : object.discoverable
   end
 
-  def moved_to_account
+  field :note do |object|
+    object.suspended? ? '' : account_bio_format(object)
+  end
+
+  field :created_at do |object|
+    object.created_at.midnight.as_json
+  end
+
+  field :last_status_at do |object|
+    object.last_status_at&.to_date&.iso8601
+  end
+
+  field :url do |object|
+    ActivityPub::TagManager.instance.url_for(object)
+  end
+
+  field :avatar do |object|
+    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_original_url)
+  end
+
+  field :avatar_static do |object|
+    full_asset_url(object.suspended? ? object.avatar.default_url : object.avatar_static_url)
+  end
+
+  field :header do |object|
+    full_asset_url(object.suspended? ? object.header.default_url : object.header_original_url)
+  end
+
+  field :header_static do |object|
+    full_asset_url(object.suspended? ? object.header.default_url : object.header_static_url)
+  end
+
+  association :moved, blueprint: REST::AccountSerializer, if: -> (_name, object, options) {
+    object.moved? && object.moved_to_account.moved_to_account_id.nil?
+  } do |object|
     object.suspended? ? nil : object.moved_to_account
   end
 
-  def emojis
-    object.suspended? ? [] : object.emojis
+  field :emojis do |object|
+    ActiveModel::Serializer::CollectionSerializer.new(
+      object.suspended? ? [] : object.emojis,
+      serializer: REST::CustomEmojiSerializer
+    ).as_json
   end
 
-  def fields
-    object.suspended? ? [] : object.fields
-  end
-
-  def suspended
+  field :suspended, if: -> (_name, object, options) {
+    object.suspended?
+  } do |object|
     object.suspended?
   end
 
-  def silenced
+  field :limited, if: -> (_name, object, options) {
+    object.silenced?
+  } do |object|
     object.silenced?
   end
 
-  delegate :suspended?, :silenced?, to: :object
+  field :fields do |object|
+    return [] if object.suspended?
 
-  def moved_and_not_nested?
-    object.moved? && object.moved_to_account.moved_to_account_id.nil?
+    object.fields.map do |field|
+      {
+        "name": field.name,
+        "value": account_field_value_format(field),
+        "verified_at": field.verified_at
+      }
+    end
   end
 end

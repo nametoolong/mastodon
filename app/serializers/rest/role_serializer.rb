@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-class REST::RoleSerializer < ActiveModel::Serializer
-  attributes :id, :name, :permissions, :color, :highlighted
-
-  def id
+class REST::RoleSerializer < Blueprinter::Base
+  field :id do |object|
     object.id.to_s
   end
 
-  def permissions
+  field :permissions do |object|
     object.computed_permissions.to_s
   end
+
+  fields :name, :color, :highlighted
 end

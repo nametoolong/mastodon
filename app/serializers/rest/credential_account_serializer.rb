@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
 class REST::CredentialAccountSerializer < REST::AccountSerializer
-  attributes :source
-
-  has_one :role, serializer: REST::RoleSerializer
-
-  def source
+  field :source do |object|
     user = object.user
 
     {
@@ -18,7 +14,7 @@ class REST::CredentialAccountSerializer < REST::AccountSerializer
     }
   end
 
-  def role
+  association :role, blueprint: REST::RoleSerializer do |object|
     object.user_role
   end
 end
