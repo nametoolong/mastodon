@@ -326,23 +326,23 @@ class Status < ApplicationRecord
     end
 
     def favourites_map(status_ids, account_id)
-      Favourite.select('status_id').where(status_id: status_ids).where(account_id: account_id).each_with_object({}) { |f, h| h[f.status_id] = true }
+      Favourite.where(status_id: status_ids).where(account_id: account_id).pluck(:status_id).each_with_object({}) { |f, h| h[f] = true }
     end
 
     def bookmarks_map(status_ids, account_id)
-      Bookmark.select('status_id').where(status_id: status_ids).where(account_id: account_id).map { |f| [f.status_id, true] }.to_h
+      Bookmark.where(status_id: status_ids).where(account_id: account_id).pluck(:status_id).each_with_object({}) { |b, h| h[b] = true }
     end
 
     def reblogs_map(status_ids, account_id)
-      unscoped.select('reblog_of_id').where(reblog_of_id: status_ids).where(account_id: account_id).each_with_object({}) { |s, h| h[s.reblog_of_id] = true }
+      unscoped.where(reblog_of_id: status_ids).where(account_id: account_id).pluck(:reblog_of_id).each_with_object({}) { |s, h| h[s] = true }
     end
 
     def mutes_map(conversation_ids, account_id)
-      ConversationMute.select('conversation_id').where(conversation_id: conversation_ids).where(account_id: account_id).each_with_object({}) { |m, h| h[m.conversation_id] = true }
+      ConversationMute.where(conversation_id: conversation_ids).where(account_id: account_id).pluck(:conversation_id).each_with_object({}) { |m, h| h[m] = true }
     end
 
     def pins_map(status_ids, account_id)
-      StatusPin.select('status_id').where(status_id: status_ids).where(account_id: account_id).each_with_object({}) { |p, h| h[p.status_id] = true }
+      StatusPin.where(status_id: status_ids).where(account_id: account_id).pluck(:status_id).each_with_object({}) { |p, h| h[p] = true }
     end
 
     def reload_stale_associations!(cached_items)

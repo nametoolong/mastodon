@@ -14,8 +14,13 @@ class StatusRelationshipsPresenter
       @filters_map    = {}
     else
       statuses            = statuses.compact
-      status_ids          = statuses.flat_map { |s| [s.id, s.reblog_of_id] }.uniq.compact
-      conversation_ids    = statuses.filter_map(&:conversation_id).uniq
+      status_ids          = (statuses.each_with_object({}) do |status, h|
+        h[status.id] = true
+        h[status.reblog_of_id] = true if status.reblog?
+      end).keys
+      conversation_ids    = (statuses.each_with_object({}) do |status, h|
+        h[status.conversation_id] = true
+      end).keys
       pinnable_status_ids = statuses.map(&:proper).filter_map { |s| s.id if s.account_id == current_account_id && %w(public unlisted private).include?(s.visibility) }
 
       @filters_map     = build_filters_map(statuses, current_account_id).merge(options[:filters_map] || {})
