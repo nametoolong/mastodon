@@ -12,7 +12,7 @@ class Api::V1::FollowedTagsController < Api::BaseController
   after_action :insert_pagination_headers, only: :show
 
   def index
-    render json: render_blueprint_with_account(REST::TagSerializer, @results.map(&:tag), TagRelationshipsPresenter.new(@results.map(&:tag), current_user&.account_id))
+    render json: render_blueprint_with_account(REST::TagSerializer, @results.map(&:tag), relationships: TagRelationshipsPresenter.new(@results.map(&:tag), current_user&.account_id))
   end
 
   private

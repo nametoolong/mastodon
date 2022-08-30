@@ -10,7 +10,7 @@ class Api::V1::Trends::TagsController < Api::BaseController
   DEFAULT_TAGS_LIMIT = 10
 
   def index
-    render json: render_blueprint_with_account(REST::TagSerializer, @tags, TagRelationshipsPresenter.new(@tags, current_user&.account_id))
+    render json: render_blueprint_with_account(REST::TagSerializer, @tags, relationships: TagRelationshipsPresenter.new(@tags, current_user&.account_id))
   end
 
   private
