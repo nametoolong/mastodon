@@ -2,6 +2,7 @@
 
 class Api::V1::Statuses::ReblogsController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:statuses' }
   before_action :require_user!
@@ -12,7 +13,7 @@ class Api::V1::Statuses::ReblogsController < Api::BaseController
   def create
     @status = ReblogService.new.call(current_account, @reblog, reblog_params)
 
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
@@ -28,7 +29,7 @@ class Api::V1::Statuses::ReblogsController < Api::BaseController
       authorize @reblog, :show?
     end
 
-    render json: @reblog, serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, reblogs_map: { @reblog.id => false })
+    render json: render_blueprint_with_account(REST::StatusSerializer, @reblog, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, reblogs_map: { @reblog.id => false }))
   rescue Mastodon::NotPermittedError
     not_found
   end

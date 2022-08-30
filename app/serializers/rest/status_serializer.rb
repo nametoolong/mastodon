@@ -1,56 +1,25 @@
 # frozen_string_literal: true
 
-class REST::StatusSerializer < ActiveModel::Serializer
-  include FormattingHelper
+class REST::StatusSerializer < Blueprinter::Base
+  extend FormattingHelper
+  extend StaticRoutingHelper
 
-  attributes :id, :created_at, :in_reply_to_id, :in_reply_to_account_id,
-             :sensitive, :spoiler_text, :visibility, :language,
-             :uri, :url, :replies_count, :reblogs_count,
-             :favourites_count, :edited_at
+  fields :created_at, :spoiler_text, :language, :replies_count,
+         :reblogs_count, :favourites_count, :edited_at
 
-  attribute :favourited, if: :current_user?
-  attribute :reblogged, if: :current_user?
-  attribute :muted, if: :current_user?
-  attribute :bookmarked, if: :current_user?
-  attribute :pinned, if: :pinnable?
-  has_many :filtered, serializer: REST::FilterResultSerializer, if: :current_user?
-
-  attribute :content, unless: :source_requested?
-  attribute :text, if: :source_requested?
-
-  belongs_to :reblog, serializer: REST::StatusSerializer
-  belongs_to :application, if: :show_application?
-  attribute :account
-
-  has_many :ordered_media_attachments, key: :media_attachments, serializer: REST::MediaAttachmentSerializer
-  has_many :ordered_mentions, key: :mentions
-  has_many :tags
-  has_many :emojis, serializer: REST::CustomEmojiSerializer
-
-  has_one :preview_card, key: :card, serializer: REST::PreviewCardSerializer
-  has_one :preloadable_poll, key: :poll, serializer: REST::PollSerializer
-
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def in_reply_to_id
+  field :in_reply_to_id do |object|
     object.in_reply_to_id&.to_s
   end
 
-  def in_reply_to_account_id
+  field :in_reply_to_account_id do |object|
     object.in_reply_to_account_id&.to_s
   end
 
-  def current_user?
-    !current_user.nil?
-  end
-
-  def show_application?
-    object.account.user_shows_application? || (current_user? && current_user.account_id == object.account_id)
-  end
-
-  def visibility
+  field :visibility do |object|
     # This visibility is masked behind "private"
     # to avoid API changes because there are no
     # UX differences
@@ -61,128 +30,140 @@ class REST::StatusSerializer < ActiveModel::Serializer
     end
   end
 
-  def sensitive
-    if current_user? && current_user.account_id == object.account_id
-      object.sensitive
-    else
-      object.account.sensitized? || object.sensitive
-    end
-  end
-
-  def uri
+  field :uri do |object|
     ActivityPub::TagManager.instance.uri_for(object)
   end
 
-  def content
-    status_content_format(object)
-  end
-
-  def url
+  field :url do |object|
     ActivityPub::TagManager.instance.url_for(object)
   end
 
-  def favourited
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].favourites_map[object.id] || false
-    else
-      current_user.account.favourited?(object)
+  field :content, if: -> (_name, object, options) {
+    !options[:source_requested]
+  } do |object|
+    status_content_format(object)
+  end
+
+  field :text, if: -> (_name, object, options) {
+    options[:source_requested]
+  }
+
+  field :media_attachments do |object|
+    ActiveModel::Serializer::CollectionSerializer.new(
+      object.ordered_media_attachments,
+      serializer: REST::MediaAttachmentSerializer
+    ).as_json
+  end
+
+  field :mentions do |object|
+    object.active_mentions.to_a.sort_by(&:id).map do |mention|
+      {
+        id: mention.account_id.to_s,
+        username: mention.account_username,
+        url: ActivityPub::TagManager.instance.url_for(mention.account),
+        acct: mention.account.pretty_acct
+      }
     end
   end
 
-  def reblogged
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].reblogs_map[object.id] || false
-    else
-      current_user.account.reblogged?(object)
+  field :tags do |object|
+    object.tags.map do |tag|
+      {name: tag.name, url: tag_url(tag)}
     end
   end
 
-  def muted
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].mutes_map[object.conversation_id] || false
-    else
-      current_user.account.muting_conversation?(object.conversation)
-    end
-  end
+  association :account, blueprint: REST::AccountSerializer
+  association :emojis, blueprint: REST::CustomEmojiSerializer
+  association :preview_card, name: :card, blueprint: REST::PreviewCardSerializer
 
-  def bookmarked
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].bookmarks_map[object.id] || false
-    else
-      current_user.account.bookmarked?(object)
-    end
-  end
-
-  def pinned
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].pins_map[object.id] || false
-    else
-      current_user.account.pinned?(object)
-    end
-  end
-
-  def filtered
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].filters_map[object.id] || []
-    else
-      current_user.account.status_matches_filters(object)
-    end
-  end
-
-  def pinnable?
-    current_user? &&
-      current_user.account_id == object.account_id &&
-      !object.reblog? &&
-      %w(public unlisted private).include?(object.visibility)
-  end
-
-  def source_requested?
-    instance_options[:source_requested]
-  end
-
-  def ordered_mentions
-    object.active_mentions.to_a.sort_by(&:id)
-  end
-
-  def account
-    REST::AccountSerializer.render_as_json(object.account)
-  end
-
-  class ApplicationSerializer < ActiveModel::Serializer
-    attributes :name, :website
-
-    def website
-      object.website.presence
-    end
-  end
-
-  class MentionSerializer < ActiveModel::Serializer
-    attributes :id, :username, :url, :acct
-
-    def id
-      object.account_id.to_s
+  view :guest do
+    field :sensitive do |object|
+      object.account.sensitized? || object.sensitive
     end
 
-    def username
-      object.account_username
+    field :application, if: -> (_name, object, options) {
+      object.account.user_shows_application?
+    } do |object|
+      object.application && {name: object.application.name, website: object.application.website.presence}
     end
 
-    def url
-      ActivityPub::TagManager.instance.url_for(object.account)
-    end
-
-    def acct
-      object.account.pretty_acct
-    end
+    association :reblog, blueprint: REST::StatusSerializer, view: :guest
+    association :preloadable_poll, name: :poll, blueprint: REST::PollSerializer, view: :guest
   end
 
-  class TagSerializer < ActiveModel::Serializer
-    include RoutingHelper
-
-    attributes :name, :url
-
-    def url
-      tag_url(object)
+  view :logged_in do
+    field :sensitive do |object, options|
+      if options[:current_account].id == object.account_id
+        object.sensitive
+      else
+        object.account.sensitized? || object.sensitive
+      end
     end
+
+    field :application, if: -> (_name, object, options) {
+      object.account.user_shows_application? || options[:current_account].id == object.account_id
+    } do |object|
+      object.application && {name: object.application.name, website: object.application.website.presence}
+    end
+
+    field :favourited do |object, options|
+      if options[:relationships]
+        options[:relationships].favourites_map[object.id] || false
+      else
+        options[:current_account].favourited?(object)
+      end
+    end
+
+    field :reblogged do |object, options|
+      if options[:relationships]
+        options[:relationships].reblogs_map[object.id] || false
+      else
+        options[:current_account].reblogged?(object)
+      end
+    end
+
+    field :muted do |object, options|
+      if options[:relationships]
+        options[:relationships].mutes_map[object.conversation_id] || false
+      else
+        options[:current_account].muting_conversation?(object.conversation)
+      end
+    end
+
+    field :bookmarked do |object, options|
+      if options[:relationships]
+        options[:relationships].bookmarks_map[object.id] || false
+      else
+        options[:current_account].bookmarked?(object)
+      end
+    end
+
+    field :pinned, if: -> (_name, object, options) {
+        options[:current_account].id == object.account_id &&
+        !object.reblog? &&
+        %w(public unlisted private).include?(object.visibility)
+    } do |object, options|
+      if options[:relationships]
+        options[:relationships].pins_map[object.id] || false
+      else
+        options[:current_account].pinned?(object)
+      end
+    end
+
+    field :filtered do |object, options|
+      if options[:relationships]
+        filtered = options[:relationships].filters_map[object.id] || []
+      else
+        filtered = options[:current_account].status_matches_filters(object)
+      end
+
+      ActiveModel::Serializer::CollectionSerializer.new(
+        filtered,
+        serializer: REST::FilterResultSerializer
+      ).as_json
+    end
+
+    association :reblog, blueprint: REST::StatusSerializer, view: :logged_in
+    association :preloadable_poll, name: :poll, blueprint: REST::PollSerializer, view: :logged_in
   end
 end

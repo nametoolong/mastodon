@@ -2,13 +2,14 @@
 
 class Api::V2::SearchController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   RESULTS_LIMIT = 20
 
   before_action -> { authorize_if_got_token! :read, :'read:search' }
 
   def index
-    render json: REST::SearchSerializer.render(search_results)
+    render json: render_blueprint_with_account(REST::SearchSerializer, search_results)
   rescue Mastodon::SyntaxError
     unprocessable_entity
   rescue ActiveRecord::RecordNotFound

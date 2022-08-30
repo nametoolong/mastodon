@@ -173,19 +173,25 @@ module StatusesHelper
   end
 
   def render_card_component(status, **options)
+    card_content = nil
+    card_content = REST::PreviewCardSerializer.render_as_json(status.preview_card) if status.preview_card
+
     component_params = {
       sensitive: sensitized?(status, current_account),
       maxDescription: 160,
-      card: ActiveModelSerializers::SerializableResource.new(status.preview_card, serializer: REST::PreviewCardSerializer).as_json,
+      card: card_content,
     }.merge(**options)
 
     react_component :card, component_params
   end
 
   def render_poll_component(status, **options)
+    poll_content = nil
+    poll_content = render_as_json_with_account(REST::PollSerializer, status.preloadable_poll) if status.preloadable_poll
+
     component_params = {
       disabled: true,
-      poll: ActiveModelSerializers::SerializableResource.new(status.preloadable_poll, serializer: REST::PollSerializer, scope: current_user, scope_name: :current_user).as_json,
+      poll: poll_content,
     }.merge(**options)
 
     react_component :poll, component_params do

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::Trends::LinksController < Api::BaseController
+  include BlueprintHelper
+
   before_action :set_links
 
   after_action :insert_pagination_headers
@@ -8,7 +10,7 @@ class Api::V1::Trends::LinksController < Api::BaseController
   DEFAULT_LINKS_LIMIT = 10
 
   def index
-    render json: @links, each_serializer: REST::Trends::LinkSerializer
+    render json: REST::Trends::LinkSerializer.render(@links)
   end
 
   private

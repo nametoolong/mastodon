@@ -2,6 +2,7 @@
 
 class Api::V1::Statuses::FavouritesController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:favourites' }
   before_action :require_user!
@@ -9,7 +10,7 @@ class Api::V1::Statuses::FavouritesController < Api::BaseController
 
   def create
     FavouriteService.new.call(current_account, @status)
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
@@ -23,7 +24,7 @@ class Api::V1::Statuses::FavouritesController < Api::BaseController
       authorize @status, :show?
     end
 
-    render json: @status, serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, favourites_map: { @status.id => false })
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, favourites_map: { @status.id => false }))
   rescue Mastodon::NotPermittedError
     not_found
   end

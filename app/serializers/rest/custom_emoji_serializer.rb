@@ -1,25 +1,21 @@
 # frozen_string_literal: true
 
-class REST::CustomEmojiSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class REST::CustomEmojiSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :shortcode, :url, :static_url, :visible_in_picker
+  fields :shortcode, :visible_in_picker
 
-  attribute :category, if: :category_loaded?
-
-  def url
+  field :url do |object|
     full_asset_url(object.image.url)
   end
 
-  def static_url
+  field :static_url do |object|
     full_asset_url(object.image.url(:static))
   end
 
-  def category
-    object.category.name
-  end
-
-  def category_loaded?
+  field :category, if: -> (_name, object, options) {
     object.association(:category).loaded? && object.category.present?
+  } do |object|
+    object.category.name
   end
 end

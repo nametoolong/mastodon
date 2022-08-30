@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-class REST::PreviewCardSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class REST::PreviewCardSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :url, :title, :description, :type,
-             :author_name, :author_url, :provider_name,
-             :provider_url, :html, :width, :height,
-             :image, :embed_url, :blurhash
+  fields :url, :title, :description, :type,
+         :author_name, :author_url, :provider_name,
+         :provider_url, :html, :width, :height,
+         :embed_url, :blurhash
 
-  def image
+  field :image do |object|
     object.image? ? full_asset_url(object.image.url(:original)) : nil
   end
 end

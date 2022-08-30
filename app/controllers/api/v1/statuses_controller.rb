@@ -2,6 +2,7 @@
 
 class Api::V1::StatusesController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { authorize_if_got_token! :read, :'read:statuses' }, except: [:create, :update, :destroy]
   before_action -> { doorkeeper_authorize! :write, :'write:statuses' }, only:   [:create, :update, :destroy]
@@ -20,7 +21,7 @@ class Api::V1::StatusesController < Api::BaseController
 
   def show
     @status = cache_collection([@status], Status).first
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def context
@@ -32,7 +33,7 @@ class Api::V1::StatusesController < Api::BaseController
     @context = Context.new(ancestors: loaded_ancestors, descendants: loaded_descendants)
     statuses = [@status] + @context.ancestors + @context.descendants
 
-    render json: @context, serializer: REST::ContextSerializer, relationships: StatusRelationshipsPresenter.new(statuses, current_user&.account_id)
+    render json: render_blueprint_with_account(REST::ContextSerializer, @context, relationships: StatusRelationshipsPresenter.new(statuses, current_user&.account_id))
   end
 
   def create
@@ -52,7 +53,11 @@ class Api::V1::StatusesController < Api::BaseController
       with_rate_limit: true
     )
 
-    render json: @status, serializer: @status.is_a?(ScheduledStatus) ? REST::ScheduledStatusSerializer : REST::StatusSerializer
+    if @status.is_a?(ScheduledStatus)
+      render json: @status, serializer: REST::ScheduledStatusSerializer
+    else
+      render json: render_blueprint_with_account(REST::StatusSerializer, @status)
+    end
   end
 
   def update
@@ -69,7 +74,7 @@ class Api::V1::StatusesController < Api::BaseController
       poll: status_params[:poll]
     )
 
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
@@ -78,7 +83,7 @@ class Api::V1::StatusesController < Api::BaseController
 
     @status.discard
     @status.account.statuses_count = @status.account.statuses_count - 1
-    json = render_to_body json: @status, serializer: REST::StatusSerializer, source_requested: true
+    json = render_blueprint_with_account(REST::StatusSerializer, @status, source_requested: true)
 
     RemovalWorker.perform_async(@status.id, { 'redraft' => true })
 

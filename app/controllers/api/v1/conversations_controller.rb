@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::ConversationsController < Api::BaseController
+  include BlueprintHelper
+
   LIMIT = 20
 
   before_action -> { doorkeeper_authorize! :read, :'read:statuses' }, only: :index
@@ -11,12 +13,12 @@ class Api::V1::ConversationsController < Api::BaseController
 
   def index
     @conversations = paginated_conversations
-    render json: @conversations, each_serializer: REST::ConversationSerializer
+    render json: render_blueprint_with_account(REST::ConversationSerializer, @conversations)
   end
 
   def read
     @conversation.update!(unread: false)
-    render json: @conversation, serializer: REST::ConversationSerializer
+    render json: render_blueprint_with_account(REST::ConversationSerializer, @conversation)
   end
 
   def destroy

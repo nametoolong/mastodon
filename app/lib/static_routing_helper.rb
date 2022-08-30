@@ -7,6 +7,12 @@ module StaticRoutingHelper
     URI.join(asset_host, source).to_s
   end
 
+  def tag_url(tag)
+    Rails.application.routes.url_helpers.tag_url(tag, host: ActionMailer::Base.default_url_options[:host])
+  end
+
+  private
+
   def asset_host
     @root_url ||= (
       Rails.configuration.action_controller.asset_host ||

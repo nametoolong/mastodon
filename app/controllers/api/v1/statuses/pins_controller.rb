@@ -2,6 +2,7 @@
 
 class Api::V1::Statuses::PinsController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:accounts' }
   before_action :require_user!
@@ -10,7 +11,7 @@ class Api::V1::Statuses::PinsController < Api::BaseController
   def create
     StatusPin.create!(account: current_account, status: @status)
     distribute_add_activity!
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
@@ -21,7 +22,7 @@ class Api::V1::Statuses::PinsController < Api::BaseController
       distribute_remove_activity!
     end
 
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   private

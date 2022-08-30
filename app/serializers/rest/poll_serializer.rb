@@ -1,36 +1,34 @@
 # frozen_string_literal: true
 
-class REST::PollSerializer < ActiveModel::Serializer
-  attributes :id, :expires_at, :expired,
-             :multiple, :votes_count, :voters_count
+class REST::PollSerializer < Blueprinter::Base
+  fields :expires_at, :multiple, :votes_count, :voters_count
 
-  has_many :loaded_options, key: :options
-  has_many :emojis, serializer: REST::CustomEmojiSerializer
-
-  attribute :voted, if: :current_user?
-  attribute :own_votes, if: :current_user?
-
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def expired
+  field :expired do |object|
     object.expired?
   end
 
-  def voted
-    object.voted?(current_user.account)
+  field :options do |object|
+    object.loaded_options.map do |option|
+      {title: option.title, votes_count: option.votes_count}
+    end
   end
 
-  def own_votes
-    object.own_votes(current_user.account)
+  association :emojis, blueprint: REST::CustomEmojiSerializer
+
+  view :guest do
   end
 
-  def current_user?
-    !current_user.nil?
-  end
+  view :logged_in do
+    field :voted do |object, options|
+      object.voted?(options[:current_account])
+    end
 
-  class OptionSerializer < ActiveModel::Serializer
-    attributes :title, :votes_count
+    field :own_votes do |object, options|
+      object.own_votes(options[:current_account])
+    end
   end
 end

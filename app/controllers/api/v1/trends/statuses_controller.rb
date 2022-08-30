@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 class Api::V1::Trends::StatusesController < Api::BaseController
+  include BlueprintHelper
+
   before_action :set_statuses
 
   after_action :insert_pagination_headers
 
   def index
-    render json: @statuses, each_serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @statuses)
   end
 
   private

@@ -2,6 +2,7 @@
 
 class Api::V1::Polls::VotesController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:statuses' }
   before_action :require_user!
@@ -9,7 +10,7 @@ class Api::V1::Polls::VotesController < Api::BaseController
 
   def create
     VoteService.new.call(current_account, @poll, vote_params[:choices])
-    render json: @poll, serializer: REST::PollSerializer
+    render json: render_blueprint_with_account(REST::PollSerializer, @poll)
   end
 
   private

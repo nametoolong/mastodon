@@ -2,6 +2,7 @@
 
 class Api::V1::Statuses::MutesController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:mutes' }
   before_action :require_user!
@@ -12,14 +13,14 @@ class Api::V1::Statuses::MutesController < Api::BaseController
     current_account.mute_conversation!(@conversation)
     @mutes_map = { @conversation.id => true }
 
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
     current_account.unmute_conversation!(@conversation)
     @mutes_map = { @conversation.id => false }
 
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   private

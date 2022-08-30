@@ -79,10 +79,6 @@ class InitialStateSerializer < Blueprinter::Base
     { accept_content_types: MediaAttachment.supported_file_extensions + MediaAttachment.supported_mime_types }
   end
 
-  field :settings do |object|
-    object[:settings]
-  end
-
   field :languages do |object|
     LanguagesHelper::SUPPORTED_LOCALES.map { |(key, value)| [key, value[0], value[1]] }
   end
@@ -91,7 +87,7 @@ class InitialStateSerializer < Blueprinter::Base
     REST::WebPushSubscriptionSerializer.new(object[:push_subscription]).as_json if object[:push_subscription]
   end
 
-  association :role, blueprint: REST::RoleSerializer do |object|
-    object[:role]
-  end
+  field :settings
+
+  association :role, blueprint: REST::RoleSerializer
 end

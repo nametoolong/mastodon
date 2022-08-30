@@ -2,6 +2,7 @@
 
 class Api::V1::Statuses::BookmarksController < Api::BaseController
   include Authorization
+  include BlueprintHelper
 
   before_action -> { doorkeeper_authorize! :write, :'write:bookmarks' }
   before_action :require_user!
@@ -9,7 +10,7 @@ class Api::V1::Statuses::BookmarksController < Api::BaseController
 
   def create
     current_account.bookmarks.find_or_create_by!(account: current_account, status: @status)
-    render json: @status, serializer: REST::StatusSerializer
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status)
   end
 
   def destroy
@@ -24,7 +25,7 @@ class Api::V1::Statuses::BookmarksController < Api::BaseController
 
     bookmark&.destroy!
 
-    render json: @status, serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, bookmarks_map: { @status.id => false })
+    render json: render_blueprint_with_account(REST::StatusSerializer, @status, relationships: StatusRelationshipsPresenter.new([@status], current_account.id, bookmarks_map: { @status.id => false }))
   rescue Mastodon::NotPermittedError
     not_found
   end

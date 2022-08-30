@@ -10,8 +10,8 @@ class REST::AnnouncementSerializer < ActiveModel::Serializer
 
   has_many :mentions
   has_many :statuses
-  has_many :tags, serializer: REST::StatusSerializer::TagSerializer
-  has_many :emojis, serializer: REST::CustomEmojiSerializer
+  attribute :tags
+  attribute :emojis
   has_many :reactions, serializer: REST::ReactionSerializer
 
   def current_user?
@@ -59,6 +59,16 @@ class REST::AnnouncementSerializer < ActiveModel::Serializer
 
     def url
       ActivityPub::TagManager.instance.url_for(object)
+    end
+  end
+
+  def emojis
+    REST::CustomEmojiSerializer.render_as_json(object.emojis)
+  end
+
+  def tags
+    object.tags.map do |tag|
+      {name: tag.name, url: tag_url(tag)}
     end
   end
 end

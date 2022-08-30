@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class REST::Admin::ReportSerializer < ActiveModel::Serializer
+  include BlueprintHelper
+
   attributes :id, :action_taken, :action_taken_at, :category, :comment,
              :forwarded, :created_at, :updated_at
 
@@ -9,7 +11,7 @@ class REST::Admin::ReportSerializer < ActiveModel::Serializer
   has_one :assigned_account, serializer: REST::Admin::AccountSerializer
   has_one :action_taken_by_account, serializer: REST::Admin::AccountSerializer
 
-  has_many :statuses, serializer: REST::StatusSerializer
+  attribute :statuses
   has_many :rules, serializer: REST::RuleSerializer
 
   def id
@@ -17,6 +19,6 @@ class REST::Admin::ReportSerializer < ActiveModel::Serializer
   end
 
   def statuses
-    object.statuses.with_includes
+    render_as_json_with_account(REST::StatusSerializer, object.statuses.with_includes)
   end
 end

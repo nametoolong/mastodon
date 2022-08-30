@@ -10,9 +10,7 @@ class REST::AccountSerializer < Blueprinter::Base
     object.id.to_s
   end
 
-  field :acct do |object|
-    object.pretty_acct
-  end
+  field :pretty_acct, name: :acct
 
   field :display_name do |object|
     object.suspended? ? '' : object.display_name
@@ -62,19 +60,6 @@ class REST::AccountSerializer < Blueprinter::Base
     full_asset_url(object.suspended? ? object.header.default_url : object.header_static_url)
   end
 
-  association :moved, blueprint: REST::AccountSerializer, if: -> (_name, object, options) {
-    object.moved? && object.moved_to_account.moved_to_account_id.nil?
-  } do |object|
-    object.suspended? ? nil : object.moved_to_account
-  end
-
-  field :emojis do |object|
-    ActiveModel::Serializer::CollectionSerializer.new(
-      object.suspended? ? [] : object.emojis,
-      serializer: REST::CustomEmojiSerializer
-    ).as_json
-  end
-
   field :suspended, if: -> (_name, object, options) {
     object.suspended?
   } do |object|
@@ -100,4 +85,12 @@ class REST::AccountSerializer < Blueprinter::Base
       end
     end
   end
+
+  association :moved, blueprint: REST::AccountSerializer, if: -> (_name, object, options) {
+    object.moved? && object.moved_to_account.moved_to_account_id.nil?
+  } do |object|
+    object.suspended? ? nil : object.moved_to_account
+  end
+
+  association :emojis, blueprint: REST::CustomEmojiSerializer
 end

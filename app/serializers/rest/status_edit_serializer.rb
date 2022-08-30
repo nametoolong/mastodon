@@ -3,12 +3,9 @@
 class REST::StatusEditSerializer < ActiveModel::Serializer
   include FormattingHelper
 
-  attribute :account
-
-  attributes :content, :spoiler_text, :sensitive, :created_at
+  attributes :account, :content, :spoiler_text, :sensitive, :created_at, :emojis
 
   has_many :ordered_media_attachments, key: :media_attachments, serializer: REST::MediaAttachmentSerializer
-  has_many :emojis, serializer: REST::CustomEmojiSerializer
 
   attribute :poll, if: -> { object.poll_options.present? }
 
@@ -22,5 +19,9 @@ class REST::StatusEditSerializer < ActiveModel::Serializer
 
   def account
     REST::AccountSerializer.render_as_json(object.account) if object.account
+  end
+
+  def emojis
+    REST::CustomEmojiSerializer.render_as_json(object.emojis)
   end
 end

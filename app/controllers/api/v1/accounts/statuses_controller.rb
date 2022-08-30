@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::Accounts::StatusesController < Api::BaseController
+  include BlueprintHelper
+
   before_action -> { authorize_if_got_token! :read, :'read:statuses' }
   before_action :set_account
 
@@ -8,7 +10,7 @@ class Api::V1::Accounts::StatusesController < Api::BaseController
 
   def index
     @statuses = load_statuses
-    render json: @statuses, each_serializer: REST::StatusSerializer, relationships: StatusRelationshipsPresenter.new(@statuses, current_user&.account_id)
+    render json: render_blueprint_with_account(REST::StatusSerializer, @statuses, relationships: StatusRelationshipsPresenter.new(@statuses, current_user&.account_id))
   end
 
   private

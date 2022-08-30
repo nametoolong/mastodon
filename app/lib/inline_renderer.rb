@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class InlineRenderer
+  include BlueprintHelper
+
   def initialize(object, current_account, template)
     @object          = object
     @current_account = current_account
@@ -10,11 +12,11 @@ class InlineRenderer
   def render
     case @template
     when :status
-      serializer = REST::StatusSerializer
+      return render_as_json_with_account(REST::StatusSerializer, @object)
     when :notification
       serializer = REST::NotificationSerializer
     when :conversation
-      serializer = REST::ConversationSerializer
+      return render_as_json_with_account(REST::ConversationSerializer, @object)
     when :announcement
       serializer = REST::AnnouncementSerializer
     when :reaction
