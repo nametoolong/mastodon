@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::FollowedTagsController < Api::BaseController
+  include BlueprintHelper
+
   TAGS_LIMIT = 100
 
   before_action -> { doorkeeper_authorize! :follow, :read, :'read:follows' }, except: :show
@@ -10,7 +12,7 @@ class Api::V1::FollowedTagsController < Api::BaseController
   after_action :insert_pagination_headers, only: :show
 
   def index
-    render json: @results.map(&:tag), each_serializer: REST::TagSerializer, relationships: TagRelationshipsPresenter.new(@results.map(&:tag), current_user&.account_id)
+    render json: render_blueprint_with_account(REST::TagSerializer, @results.map(&:tag), TagRelationshipsPresenter.new(@results.map(&:tag), current_user&.account_id))
   end
 
   private

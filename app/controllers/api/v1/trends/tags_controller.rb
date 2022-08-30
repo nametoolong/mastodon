@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::Trends::TagsController < Api::BaseController
+  include BlueprintHelper
+
   before_action :set_tags
 
   after_action :insert_pagination_headers
@@ -8,7 +10,7 @@ class Api::V1::Trends::TagsController < Api::BaseController
   DEFAULT_TAGS_LIMIT = 10
 
   def index
-    render json: @tags, each_serializer: REST::TagSerializer, relationships: TagRelationshipsPresenter.new(@tags, current_user&.account_id)
+    render json: render_blueprint_with_account(REST::TagSerializer, @tags, TagRelationshipsPresenter.new(@tags, current_user&.account_id))
   end
 
   private

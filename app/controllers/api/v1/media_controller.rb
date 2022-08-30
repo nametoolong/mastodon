@@ -8,7 +8,7 @@ class Api::V1::MediaController < Api::BaseController
 
   def create
     @media_attachment = current_account.media_attachments.create!(media_attachment_params)
-    render json: @media_attachment, serializer: REST::MediaAttachmentSerializer
+    render json: REST::MediaAttachmentSerializer.render(@media_attachment)
   rescue Paperclip::Errors::NotIdentifiedByImageMagickError
     render json: file_type_error, status: 422
   rescue Paperclip::Error

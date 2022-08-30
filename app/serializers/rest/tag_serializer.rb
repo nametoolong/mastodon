@@ -1,29 +1,28 @@
 # frozen_string_literal: true
 
-class REST::TagSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class REST::TagSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :name, :url, :history
+  field :display_name, name: :name
 
-  attribute :following, if: :current_user?
-
-  def url
+  field :url do |object|
     tag_url(object)
   end
 
-  def name
-    object.display_name
+  field :history do |object|
+    object.history.as_json
   end
 
-  def following
-    if instance_options && instance_options[:relationships]
-      instance_options[:relationships].following_map[object.id] || false
-    else
-      TagFollow.where(tag_id: object.id, account_id: current_user.account_id).exists?
+  view :guest do
+  end
+
+  view :logged_in do
+    field :following do |object, options|
+      if options[:relationships]
+        options[:relationships].following_map[object.id] || false
+      else
+        TagFollow.where(tag_id: object.id, account_id: options[:current_account].id).exists?
+      end
     end
-  end
-
-  def current_user?
-    !current_user.nil?
   end
 end

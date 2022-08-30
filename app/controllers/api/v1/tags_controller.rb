@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::TagsController < Api::BaseController
+  include BlueprintHelper
+
   before_action -> { doorkeeper_authorize! :follow, :write, :'write:follows' }, except: :show
   before_action :require_user!, except: :show
   before_action :set_or_create_tag
@@ -8,17 +10,17 @@ class Api::V1::TagsController < Api::BaseController
   override_rate_limit_headers :follow, family: :follows
 
   def show
-    render json: @tag, serializer: REST::TagSerializer
+    render json: render_blueprint_with_account(REST::TagSerializer, @tag)
   end
 
   def follow
     TagFollow.create!(tag: @tag, account: current_account, rate_limit: true)
-    render json: @tag, serializer: REST::TagSerializer
+    render json: render_blueprint_with_account(REST::TagSerializer, @tag)
   end
 
   def unfollow
     TagFollow.find_by(account: current_account, tag: @tag)&.destroy!
-    render json: @tag, serializer: REST::TagSerializer
+    render json: render_blueprint_with_account(REST::TagSerializer, @tag)
   end
 
   private
