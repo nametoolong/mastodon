@@ -1,27 +1,21 @@
 # frozen_string_literal: true
 
-class REST::StatusEditSerializer < ActiveModel::Serializer
-  include FormattingHelper
+class REST::StatusEditSerializer < Blueprinter::Base
+  extend FormattingHelper
 
-  attributes :account, :content, :spoiler_text, :sensitive, :created_at, :emojis
+  fields :spoiler_text, :sensitive, :created_at
 
-  has_many :ordered_media_attachments, key: :media_attachments, serializer: REST::MediaAttachmentSerializer
-
-  attribute :poll, if: -> { object.poll_options.present? }
-
-  def content
+  field :content do |object|
     status_content_format(object)
   end
 
-  def poll
+  field :poll, if: -> (_name, object, options) {
+    object.poll_options.present?
+  } do |object|
     { options: object.poll_options.map { |title| { title: title } } }
   end
 
-  def account
-    REST::AccountSerializer.render_as_json(object.account) if object.account
-  end
-
-  def emojis
-    REST::CustomEmojiSerializer.render_as_json(object.emojis)
-  end
+  association :account, blueprint: REST::AccountSerializer
+  association :emojis, blueprint: REST::CustomEmojiSerializer
+  association :ordered_media_attachments, name: :media_attachments, blueprint: REST::MediaAttachmentSerializer
 end

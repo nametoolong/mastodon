@@ -11,6 +11,14 @@ module StaticRoutingHelper
     Rails.application.routes.url_helpers.tag_url(tag, host: ActionMailer::Base.default_url_options[:host])
   end
 
+  def medium_url(media)
+    Rails.application.routes.url_helpers.medium_url(media, host: ActionMailer::Base.default_url_options[:host])
+  end
+
+  def media_proxy_url(*args)
+    Rails.application.routes.url_helpers.media_proxy_url(*args, host: ActionMailer::Base.default_url_options[:host])
+  end
+
   private
 
   def asset_host

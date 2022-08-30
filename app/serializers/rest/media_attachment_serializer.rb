@@ -1,17 +1,19 @@
 # frozen_string_literal: true
 
-class REST::MediaAttachmentSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class REST::MediaAttachmentSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :id, :type, :url, :preview_url,
-             :remote_url, :preview_remote_url, :text_url, :meta,
-             :description, :blurhash
+  fields :type, :description, :blurhash
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def url
+  field :meta do |object|
+    object.file.meta
+  end
+
+  field :url do |object|
     if object.not_processed?
       nil
     elsif object.needs_redownload?
@@ -21,11 +23,7 @@ class REST::MediaAttachmentSerializer < ActiveModel::Serializer
     end
   end
 
-  def remote_url
-    object.remote_url.presence
-  end
-
-  def preview_url
+  field :preview_url do |object|
     if object.needs_redownload?
       media_proxy_url(object.id, :small)
     elsif object.thumbnail.present?
@@ -35,15 +33,15 @@ class REST::MediaAttachmentSerializer < ActiveModel::Serializer
     end
   end
 
-  def preview_remote_url
+  field :remote_url do |object|
+    object.remote_url.presence
+  end
+
+  field :preview_remote_url do |object|
     object.thumbnail_remote_url.presence
   end
 
-  def text_url
+  field :text_url do |object|
     object.local? && object.shortcode.present? ? medium_url(object) : nil
-  end
-
-  def meta
-    object.file.meta
   end
 end

@@ -16,12 +16,12 @@ class Api::V1::MediaController < Api::BaseController
   end
 
   def show
-    render json: @media_attachment, serializer: REST::MediaAttachmentSerializer, status: status_code_for_media_attachment
+    render json: REST::MediaAttachmentSerializer.render(@media_attachment), status: status_code_for_media_attachment
   end
 
   def update
     @media_attachment.update!(updateable_media_attachment_params)
-    render json: @media_attachment, serializer: REST::MediaAttachmentSerializer, status: status_code_for_media_attachment
+    render json: REST::MediaAttachmentSerializer.render(@media_attachment), status: status_code_for_media_attachment
   end
 
   private

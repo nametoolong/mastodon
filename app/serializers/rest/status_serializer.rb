@@ -48,13 +48,6 @@ class REST::StatusSerializer < Blueprinter::Base
     options[:source_requested]
   }
 
-  field :media_attachments do |object|
-    ActiveModel::Serializer::CollectionSerializer.new(
-      object.ordered_media_attachments,
-      serializer: REST::MediaAttachmentSerializer
-    ).as_json
-  end
-
   field :mentions do |object|
     object.active_mentions.to_a.sort_by(&:id).map do |mention|
       {
@@ -75,6 +68,7 @@ class REST::StatusSerializer < Blueprinter::Base
   association :account, blueprint: REST::AccountSerializer
   association :emojis, blueprint: REST::CustomEmojiSerializer
   association :preview_card, name: :card, blueprint: REST::PreviewCardSerializer
+  association :ordered_media_attachments, name: :media_attachments, blueprint: REST::MediaAttachmentSerializer
 
   view :guest do
     field :sensitive do |object|

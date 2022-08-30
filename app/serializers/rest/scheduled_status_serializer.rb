@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-class REST::ScheduledStatusSerializer < ActiveModel::Serializer
-  attributes :id, :scheduled_at, :params
-
-  has_many :media_attachments, serializer: REST::MediaAttachmentSerializer
-
-  def id
+class REST::ScheduledStatusSerializer < Blueprinter::Base
+  field :id do |object|
     object.id.to_s
   end
 
-  def params
+  field :scheduled_at
+
+  field :params do |object|
     object.params.without(:application_id)
   end
+
+  association :media_attachments, blueprint: REST::MediaAttachmentSerializer
 end

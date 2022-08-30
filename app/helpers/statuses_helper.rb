@@ -130,9 +130,7 @@ module StatusesHelper
       blurhash: video.blurhash,
       frameRate: meta.dig('original', 'frame_rate'),
       inline: true,
-      media: [
-        ActiveModelSerializers::SerializableResource.new(video, serializer: REST::MediaAttachmentSerializer),
-      ].as_json,
+      media: REST::MediaAttachmentSerializer.render_as_json([video]),
     }.merge(**options)
 
     react_component :video, component_params do
@@ -164,7 +162,7 @@ module StatusesHelper
     component_params = {
       sensitive: sensitized?(status, current_account),
       autoplay: prefers_autoplay?,
-      media: status.ordered_media_attachments.map { |a| ActiveModelSerializers::SerializableResource.new(a, serializer: REST::MediaAttachmentSerializer).as_json },
+      media: REST::MediaAttachmentSerializer.render_as_json(status.ordered_media_attachments),
     }.merge(**options)
 
     react_component :media_gallery, component_params do

@@ -54,7 +54,7 @@ class Api::V1::StatusesController < Api::BaseController
     )
 
     if @status.is_a?(ScheduledStatus)
-      render json: @status, serializer: REST::ScheduledStatusSerializer
+      render json: REST::ScheduledStatusSerializer.render(@status)
     else
       render json: render_blueprint_with_account(REST::StatusSerializer, @status)
     end
