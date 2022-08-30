@@ -26,6 +26,6 @@ class REST::NotificationSerializer < ActiveModel::Serializer
   end
 
   def target_status
-    render_as_json_with_account(REST::StatusSerializer, object.target_status)
+    render_as_json_with_account(REST::StatusSerializer, object.target_status) if object.target_status
   end
 end
