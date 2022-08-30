@@ -22,7 +22,7 @@ class Api::V1::Trends::LinksController < Api::BaseController
   def set_links
     @links = begin
       if enabled?
-        links_from_trends.offset(offset_param).limit(limit_param(DEFAULT_LINKS_LIMIT))
+        links_from_trends.offset(offset_param).limit(limit_param(DEFAULT_LINKS_LIMIT)).records
       else
         []
       end
