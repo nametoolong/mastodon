@@ -80,7 +80,7 @@ class REST::AccountSerializer < Blueprinter::Base
         {
           "name": field.name,
           "value": account_field_value_format(field),
-          "verified_at": field.verified_at
+          "verified_at": field.verified_at&.iso8601
         }
       end
     end

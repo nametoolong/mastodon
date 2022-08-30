@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 class REST::PollSerializer < Blueprinter::Base
-  fields :expires_at, :multiple, :votes_count, :voters_count
+  fields :multiple, :votes_count, :voters_count
 
   field :id do |object|
     object.id.to_s
+  end
+
+  field :expires_at do |object|
+    object.expires_at&.iso8601
   end
 
   field :expired do |object|
