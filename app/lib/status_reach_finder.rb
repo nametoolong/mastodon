@@ -27,26 +27,29 @@ class StatusReachFinder
   end
 
   def reached_account_ids
-    [
-      replied_to_account_id,
-      reblog_of_account_id,
-      mentioned_account_ids,
-      reblogs_account_ids,
-      favourites_account_ids,
-      replies_account_ids,
-    ].tap do |arr|
-      arr.flatten!
-      arr.compact!
-      arr.uniq!
+    ids = Set.new
+
+    ids << replied_to_account_id if distributable?
+    ids << reblog_of_account_id if @status.reblog?
+
+    ids.merge(mentioned_account_ids)
+
+    # Beware: see comments for the corresponding methods
+    if distributable? || unsafe?
+      ids.merge(reblogs_account_ids)
+      ids.merge(favourites_account_ids)
+      ids.merge(replies_account_ids)
     end
+
+    return ids.to_a
   end
 
   def replied_to_account_id
-    @status.in_reply_to_account_id if distributable?
+    @status.in_reply_to_account_id
   end
 
   def reblog_of_account_id
-    @status.reblog.account_id if @status.reblog?
+    @status.reblog.account_id
   end
 
   def mentioned_account_ids
@@ -55,17 +58,17 @@ class StatusReachFinder
 
   # Beware: Reblogs can be created without the author having had access to the status
   def reblogs_account_ids
-    @status.reblogs.pluck(:account_id) if distributable? || unsafe?
+    @status.reblogs.pluck(:account_id)
   end
 
   # Beware: Favourites can be created without the author having had access to the status
   def favourites_account_ids
-    @status.favourites.pluck(:account_id) if distributable? || unsafe?
+    @status.favourites.pluck(:account_id)
   end
 
   # Beware: Replies can be created without the author having had access to the status
   def replies_account_ids
-    @status.replies.pluck(:account_id) if distributable? || unsafe?
+    @status.replies.pluck(:account_id)
   end
 
   def followers_inboxes
