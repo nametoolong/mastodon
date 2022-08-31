@@ -39,7 +39,7 @@ class InstancePresenter
   def sample_account_avatars
     Rails.cache.fetch('sample_account_avatars', expires_in: 12.hours) {
       popular_accounts = Account.local.discoverable.popular
-      popular_accounts.select(:avatar_file_name, :avatar_content_type, :avatar_file_size, :avatar_updated_at).limit(3).map do |acct|
+      popular_accounts.limit(3).map do |acct|
         {
           avatar_original_url: acct.avatar_original_url,
           avatar_static_url: acct.avatar_static_url
