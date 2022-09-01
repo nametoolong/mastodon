@@ -207,8 +207,8 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
 
     default_attributes = {
       status_id: @status.id,
-      created_at: Time.now,
-      updated_at: Time.now
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
     }
     new_mentions = current_mentions.filter_map do |item|
       item.merge(default_attributes) unless item.include?(:id)

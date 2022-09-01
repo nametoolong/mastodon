@@ -197,8 +197,8 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     default_attributes = {
       status_id: @status.id,
-      created_at: Time.now,
-      updated_at: Time.now
+      created_at: Time.now.utc,
+      updated_at: Time.now.utc
     }
     @mentions.map! { |item| item.merge!(default_attributes) }
 
