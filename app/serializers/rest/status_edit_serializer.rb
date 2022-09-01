@@ -3,11 +3,7 @@
 class REST::StatusEditSerializer < Blueprinter::Base
   extend FormattingHelper
 
-  fields :spoiler_text, :sensitive
-
-  field :created_at do |object|
-    object.created_at.iso8601
-  end
+  fields :created_at, :spoiler_text, :sensitive
 
   field :content do |object|
     status_content_format(object)

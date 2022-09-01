@@ -5,9 +5,7 @@ class REST::ScheduledStatusSerializer < Blueprinter::Base
     object.id.to_s
   end
 
-  field :scheduled_at do |object|
-    object.scheduled_at&.iso8601
-  end
+  field :scheduled_at
 
   field :params do |object|
     object.params.without(:application_id)

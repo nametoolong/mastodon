@@ -4,19 +4,11 @@ class REST::StatusSerializer < Blueprinter::Base
   extend FormattingHelper
   extend StaticRoutingHelper
 
-  fields :spoiler_text, :language, :replies_count, :reblogs_count,
-         :favourites_count
+  fields :created_at, :edited_at, :spoiler_text, :language,
+         :replies_count, :reblogs_count, :favourites_count
 
   field :id do |object|
     object.id.to_s
-  end
-
-  field :created_at do |object|
-    object.created_at.iso8601
-  end
-
-  field :edited_at do |object|
-    object.edited_at&.iso8601
   end
 
   field :in_reply_to_id do |object|
