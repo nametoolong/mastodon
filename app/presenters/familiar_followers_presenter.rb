@@ -1,8 +1,13 @@
 # frozen_string_literal: true
 
 class FamiliarFollowersPresenter
-  class Result < ActiveModelSerializers::Model
-    attributes :id, :accounts
+  class Result
+    attr_reader :id, :accounts
+
+    def initialize(id:, accounts:)
+      @id = id
+      @accounts = accounts
+    end
   end
 
   def initialize(accounts, current_account_id)
