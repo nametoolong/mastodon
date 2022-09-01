@@ -80,7 +80,7 @@ class InitialStateSerializer < Blueprinter::Base
   end
 
   field :languages do |object|
-    LanguagesHelper::SUPPORTED_LOCALES.map { |(key, value)| [key, value[0], value[1]] }
+    LanguagesHelper::INITIAL_STATE_LOCALE_LIST
   end
 
   field :push_subscription do |object|
