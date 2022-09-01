@@ -346,17 +346,14 @@ class Status < ApplicationRecord
     end
 
     def reload_stale_associations!(cached_items)
-      account_ids = Set.new(cached_items.flat_map { |item|
-        if item.reblog?
-          [item.account_id, item.reblog.account_id]
-        else
-          [item.account_id]
-        end
-      })
+      account_ids = cached_items.each_with_object({}) do |item, hash|
+        hash[item.account_id] = true
+        hash[item.reblog.account_id] = true if item.reblog?
+      end
 
       return if account_ids.empty?
 
-      accounts = Account.where(id: account_ids.to_a).eager_load(:account_stat, :user).index_by(&:id)
+      accounts = Account.where(id: account_ids.keys).eager_load(:account_stat, :user).index_by(&:id)
 
       cached_items.each do |item|
         item.account = accounts[item.account_id]
