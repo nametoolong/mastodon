@@ -404,8 +404,10 @@ class Account < ApplicationRecord
     requires_review? && !requested_review?
   end
 
-  class Field < ActiveModelSerializers::Model
-    attributes :name, :value, :verified_at, :account
+  class Field
+    include ActiveModel::Model
+
+    attr_accessor :name, :value, :verified_at, :account
 
     def initialize(account, attributes)
       @original_field = attributes
