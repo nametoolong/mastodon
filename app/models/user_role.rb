@@ -103,7 +103,9 @@ class UserRole < ApplicationRecord
   end
 
   def self.everyone
-    @everyone ||= UserRole.create_with(permissions: Flags::DEFAULT).find_or_create_by!(id: -99)
+    UserRole.find(-99)
+  rescue ActiveRecord::RecordNotFound
+    UserRole.create!(id: -99, permissions: Flags::DEFAULT)
   end
 
   def self.that_can(*any_of_privileges)
