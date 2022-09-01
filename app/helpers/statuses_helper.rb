@@ -171,7 +171,6 @@ module StatusesHelper
   end
 
   def render_card_component(status, **options)
-    card_content = nil
     card_content = REST::PreviewCardSerializer.render_as_json(status.preview_card) if status.preview_card
 
     component_params = {
@@ -184,7 +183,6 @@ module StatusesHelper
   end
 
   def render_poll_component(status, **options)
-    poll_content = nil
     poll_content = render_as_json_with_account(REST::PollSerializer, status.preloadable_poll) if status.preloadable_poll
 
     component_params = {
