@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class REST::FilterKeywordSerializer < ActiveModel::Serializer
-  attributes :id, :keyword, :whole_word
+class REST::FilterKeywordSerializer < Blueprinter::Base
+  fields :keyword, :whole_word
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 end

@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-class REST::FilterStatusSerializer < ActiveModel::Serializer
-  attributes :id, :status_id
-
-  def id
+class REST::FilterStatusSerializer < Blueprinter::Base
+  field :id do |object|
     object.id.to_s
   end
 
-  def status_id
+  field :status_id do |object|
     object.status_id.to_s
   end
 end

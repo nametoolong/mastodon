@@ -144,17 +144,12 @@ class REST::StatusSerializer < Blueprinter::Base
       end
     end
 
-    field :filtered do |object, options|
+    association :filtered, blueprint: REST::FilterResultSerializer do |object, options|
       if options[:relationships]
-        filtered = options[:relationships].filters_map[object.id] || []
+        options[:relationships].filters_map[object.id] || []
       else
-        filtered = options[:current_account].status_matches_filters(object)
+        options[:current_account].status_matches_filters(object)
       end
-
-      ActiveModel::Serializer::CollectionSerializer.new(
-        filtered,
-        serializer: REST::FilterResultSerializer
-      ).as_json
     end
 
     association :reblog, blueprint: REST::StatusSerializer, view: :logged_in

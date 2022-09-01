@@ -1,15 +1,17 @@
 # frozen_string_literal: true
 
-class REST::FilterSerializer < ActiveModel::Serializer
-  attributes :id, :title, :context, :expires_at, :filter_action
-  has_many :keywords, serializer: REST::FilterKeywordSerializer, if: :rules_requested?
-  has_many :statuses, serializer: REST::FilterStatusSerializer, if: :rules_requested?
+class REST::FilterSerializer < Blueprinter::Base
+  fields :title, :context, :expires_at, :filter_action
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def rules_requested?
-    instance_options[:rules_requested]
-  end
+  association :keywords, if: -> (_name, object, options) {
+    options[:rules_requested]
+  }, blueprint: REST::FilterKeywordSerializer
+
+  association :statuses, if: -> (_name, object, options) {
+    options[:rules_requested]
+  }, blueprint: REST::FilterStatusSerializer
 end

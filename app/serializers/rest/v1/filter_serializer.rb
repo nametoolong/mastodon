@@ -1,26 +1,23 @@
 # frozen_string_literal: true
 
-class REST::V1::FilterSerializer < ActiveModel::Serializer
-  attributes :id, :phrase, :context, :whole_word, :expires_at,
-             :irreversible
-
-  delegate :context, :expires_at, to: :custom_filter
-
-  def id
+class REST::V1::FilterSerializer < Blueprinter::Base
+  field :id do |object|
     object.id.to_s
   end
 
-  def phrase
-    object.keyword
+  field :keyword, name: :phrase
+
+  field :whole_word
+
+  field :context do |object|
+    object.custom_filter.context
   end
 
-  def irreversible
-    custom_filter.irreversible?
+  fields :expires_at do |object|
+    object.custom_filter.expires_at
   end
 
-  private
-
-  def custom_filter
-    object.custom_filter
+  fields :irreversible do |object|
+    object.custom_filter.irreversible?
   end
 end

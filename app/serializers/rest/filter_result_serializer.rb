@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class REST::FilterResultSerializer < ActiveModel::Serializer
-  belongs_to :filter, serializer: REST::FilterSerializer
-  has_many :keyword_matches
-  has_many :status_matches
+class REST::FilterResultSerializer < Blueprinter::Base
+  field :keyword_matches
 
-  def status_matches
+  field :status_matches do |object|
     object.status_matches&.map(&:to_s)
   end
+
+  association :filter, blueprint: REST::FilterSerializer
 end
