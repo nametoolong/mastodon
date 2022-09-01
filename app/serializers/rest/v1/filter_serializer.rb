@@ -13,11 +13,11 @@ class REST::V1::FilterSerializer < Blueprinter::Base
     object.custom_filter.context
   end
 
-  fields :expires_at do |object|
+  field :expires_at do |object|
     object.custom_filter.expires_at
   end
 
-  fields :irreversible do |object|
+  field :irreversible do |object|
     object.custom_filter.irreversible?
   end
 end
