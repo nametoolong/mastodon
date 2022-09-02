@@ -1,14 +1,12 @@
 # frozen_string_literal: true
 
-class REST::ReportSerializer < ActiveModel::Serializer
-  attributes :id, :action_taken, :action_taken_at, :category, :comment,
-             :forwarded, :created_at, :status_ids, :rule_ids, :target_account
+class REST::ReportSerializer < Blueprinter::Base
+  fields :action_taken, :action_taken_at, :category, :comment,
+         :forwarded, :created_at, :status_ids, :rule_ids
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def target_account
-    REST::AccountSerializer.render_as_json(object.target_account)
-  end
+  association :target_account, blueprint: REST::AccountSerializer
 end

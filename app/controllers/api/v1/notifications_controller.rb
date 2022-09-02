@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Api::V1::NotificationsController < Api::BaseController
+  include BlueprintHelper
+
   before_action -> { doorkeeper_authorize! :read, :'read:notifications' }, except: [:clear, :dismiss]
   before_action -> { doorkeeper_authorize! :write, :'write:notifications' }, only: [:clear, :dismiss]
   before_action :require_user!
@@ -10,12 +12,12 @@ class Api::V1::NotificationsController < Api::BaseController
 
   def index
     @notifications = load_notifications
-    render json: @notifications, each_serializer: REST::NotificationSerializer, relationships: StatusRelationshipsPresenter.new(target_statuses_from_notifications, current_user&.account_id)
+    render json: render_blueprint_with_account(REST::NotificationSerializer, @notifications, relationships: StatusRelationshipsPresenter.new(target_statuses_from_notifications, current_user&.account_id))
   end
 
   def show
     @notification = current_account.notifications.without_suspended.find(params[:id])
-    render json: @notification, serializer: REST::NotificationSerializer
+    render json: render_blueprint_with_account(REST::NotificationSerializer, @notification)
   end
 
   def clear

@@ -14,7 +14,7 @@ class InlineRenderer
     when :status
       return render_as_json_with_account(REST::StatusSerializer, @object)
     when :notification
-      serializer = REST::NotificationSerializer
+      return render_as_json_with_account(REST::NotificationSerializer, @object)
     when :conversation
       return render_as_json_with_account(REST::ConversationSerializer, @object)
     when :announcement
