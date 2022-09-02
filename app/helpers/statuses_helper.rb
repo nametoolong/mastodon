@@ -62,7 +62,7 @@ module StatusesHelper
   end
 
   def stream_link_target
-    embedded_view? ? '_blank' : nil
+    embedded_view? ? '_blank' : '_top'
   end
 
   def style_classes(status, is_predecessor, is_successor, include_threads)

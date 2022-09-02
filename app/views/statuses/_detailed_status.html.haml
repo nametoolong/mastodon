@@ -1,6 +1,6 @@
 .detailed-status.detailed-status--flex{ class: "detailed-status-#{status.visibility}" }
   .p-author.h-card
-    = link_to ActivityPub::TagManager.instance.url_for(status.account), class: 'detailed-status__display-name u-url', target: stream_link_target, rel: 'noopener' do
+    %a{ href: ActivityPub::TagManager.instance.url_for(status.account), class: 'detailed-status__display-name u-url', target: stream_link_target, rel: 'noopener' }
       .detailed-status__display-avatar
         - if prefers_autoplay?
           = image_tag status.account.avatar_original_url, alt: '', class: 'account__avatar u-photo'
@@ -41,7 +41,7 @@
     - if status.edited?
       %data.dt-updated{ value: status.edited_at.to_time.iso8601 }
 
-    = link_to ActivityPub::TagManager.instance.url_for(status), class: 'detailed-status__datetime u-url u-uid', target: stream_link_target, rel: 'noopener noreferrer' do
+    %a{ href: ActivityPub::TagManager.instance.url_for(status), class: 'detailed-status__datetime u-url u-uid', target: stream_link_target, rel: 'noopener noreferrer' }
       %time.formatted{ datetime: status.created_at.iso8601, title: l(status.created_at) }= l(status.created_at)
     ·
     - if status.edited?
@@ -56,7 +56,7 @@
       - else
         = link_to status.application.name, status.application.website, class: 'detailed-status__application', target: '_blank', rel: 'noopener noreferrer'
       ·
-    = link_to remote_interaction_path(status, type: :reply), class: 'modal-button detailed-status__link' do
+    %a{ href: remote_interaction_path(status, type: :reply), class: 'modal-button detailed-status__link' }
       - if status.in_reply_to_id.nil?
         = fa_icon('reply')
       - else
@@ -65,12 +65,12 @@
       = " "
     ·
     - if status.public_visibility? || status.unlisted_visibility?
-      = link_to remote_interaction_path(status, type: :reblog), class: 'modal-button detailed-status__link' do
+      %a{ href: remote_interaction_path(status, type: :reblog), class: 'modal-button detailed-status__link' }
         = fa_icon('retweet')
         %span.detailed-status__reblogs>= friendly_number_to_human status.reblogs_count
         = " "
       ·
-    = link_to remote_interaction_path(status, type: :favourite), class: 'modal-button detailed-status__link' do
+    %a{ href: remote_interaction_path(status, type: :favourite), class: 'modal-button detailed-status__link' }
       = fa_icon('star')
       %span.detailed-status__favorites>= friendly_number_to_human status.favourites_count
       = " "

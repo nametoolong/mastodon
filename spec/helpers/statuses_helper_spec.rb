@@ -5,7 +5,7 @@ RSpec.describe StatusesHelper, type: :helper do
     it 'returns nil if it is not an embedded view' do
       set_not_embedded_view
 
-      expect(helper.stream_link_target).to be_nil
+      expect(helper.stream_link_target).to eq '_top'
     end
 
     it 'returns _blank if it is an embedded view' do

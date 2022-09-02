@@ -113,11 +113,17 @@ module ApplicationHelper
   end
 
   def fa_icon(icon, attributes = {})
-    class_names = attributes[:class]&.split(' ') || []
-    class_names << 'fa'
-    class_names.concat(icon.split(' ').map { |cl| "fa-#{cl}" })
+    class_names = attributes[:class]&.strip || +""
 
-    content_tag(:i, nil, attributes.merge(class: class_names.join(' ')))
+    class_names << ' ' unless class_names.empty?
+    class_names << 'fa'
+
+    icon_names = icon.split(' ').join(' fa-')
+
+    class_names << ' fa-' unless icon_names.empty?
+    class_names << icon_names
+
+    content_tag(:i, nil, attributes.merge(class: class_names))
   end
 
   def visibility_icon(status)
