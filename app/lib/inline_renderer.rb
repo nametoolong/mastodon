@@ -1,43 +1,28 @@
 # frozen_string_literal: true
 
-class InlineRenderer
-  include BlueprintHelper
-
-  def initialize(object, current_account, template)
-    @object          = object
-    @current_account = current_account
-    @template        = template
-  end
-
-  def render
-    case @template
+module InlineRenderer
+  def self.render(object, current_account, template)
+    case template
     when :status
-      return render_as_json_with_account(REST::StatusSerializer, @object)
+      serializer = REST::StatusSerializer
     when :notification
-      return render_as_json_with_account(REST::NotificationSerializer, @object)
+      serializer = REST::NotificationSerializer
     when :conversation
-      return render_as_json_with_account(REST::ConversationSerializer, @object)
+      serializer = REST::ConversationSerializer
     when :announcement
       serializer = REST::AnnouncementSerializer
     when :reaction
       serializer = REST::ReactionSerializer
     when :encrypted_message
-      serializer = REST::EncryptedMessageSerializer
+      return REST::EncryptedMessageSerializer.render_as_json(object)
     else
       return
     end
 
-    serializable_resource = ActiveModelSerializers::SerializableResource.new(@object, serializer: serializer, scope: current_user, scope_name: :current_user)
-    serializable_resource.as_json
-  end
-
-  def self.render(object, current_account, template)
-    new(object, current_account, template).render
-  end
-
-  private
-
-  def current_user
-    @current_account&.user
+    if current_account.nil?
+      return serializer.render_as_json(object, view: :guest)
+    else
+      return serializer.render_as_json(object, view: :logged_in, current_account: current_account)
+    end
   end
 end

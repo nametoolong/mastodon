@@ -1,74 +1,58 @@
 # frozen_string_literal: true
 
-class REST::AnnouncementSerializer < ActiveModel::Serializer
-  include FormattingHelper
+class REST::AnnouncementSerializer < Blueprinter::Base
+  extend FormattingHelper
+  extend StaticRoutingHelper
 
-  attributes :id, :content, :starts_at, :ends_at, :all_day,
-             :published_at, :updated_at
+  fields :starts_at, :ends_at, :all_day,
+         :published_at, :updated_at
 
-  attribute :read, if: :current_user?
-
-  has_many :mentions
-  has_many :statuses
-  attribute :tags
-  attribute :emojis
-  has_many :reactions, serializer: REST::ReactionSerializer
-
-  def current_user?
-    !current_user.nil?
-  end
-
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def read
-    object.announcement_mutes.where(account: current_user.account).exists?
-  end
-
-  def content
+  field :content do |object|
     linkify(object.text)
   end
 
-  def reactions
-    object.reactions(current_user&.account)
-  end
-
-  class AccountSerializer < ActiveModel::Serializer
-    attributes :id, :username, :url, :acct
-
-    def id
-      object.id.to_s
-    end
-
-    def url
-      ActivityPub::TagManager.instance.url_for(object)
-    end
-
-    def acct
-      object.pretty_acct
+  field :mentions do |object|
+    object.mentions.map do |account|
+      {
+        id: account.id.to_s,
+        username: account.username,
+        url: ActivityPub::TagManager.instance.url_for(account),
+        acct: account.pretty_acct
+      }
     end
   end
 
-  class StatusSerializer < ActiveModel::Serializer
-    attributes :id, :url
-
-    def id
-      object.id.to_s
-    end
-
-    def url
-      ActivityPub::TagManager.instance.url_for(object)
+  field :statuses do |object|
+    object.statuses.map do |status|
+      {
+        id: status.id.to_s,
+        url: ActivityPub::TagManager.instance.url_for(status)
+      }
     end
   end
 
-  def emojis
-    REST::CustomEmojiSerializer.render_as_json(object.emojis)
-  end
-
-  def tags
+  field :tags do |object|
     object.tags.map do |tag|
       {name: tag.name, url: tag_url(tag)}
+    end
+  end
+
+  association :emojis, blueprint: REST::CustomEmojiSerializer
+
+  view :guest do
+  end
+
+  view :logged_in do
+    field :read do |object, options|
+      object.announcement_mutes.where(account: options[:current_account]).exists?
+    end
+
+    association :reactions, blueprint: REST::ReactionSerializer, view: :logged_in do |object, options|
+      object.reactions(options[:current_account])
     end
   end
 end
