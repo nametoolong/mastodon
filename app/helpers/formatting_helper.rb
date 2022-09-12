@@ -2,15 +2,15 @@
 
 module FormattingHelper
   def html_aware_format(text, local, options = {})
-    HtmlAwareFormatter.new(text, local, options).to_s
+    HtmlAwareFormatter.format(text, local, options)
   end
 
   def linkify(text, options = {})
-    TextFormatter.new(text, options).to_s
+    TextFormatter.instance.format(text, options)
   end
 
   def extract_status_plain_text(status)
-    PlainTextFormatter.new(status.text, status.local?).to_s
+    PlainTextFormatter.format(status.text, status.local?)
   end
   module_function :extract_status_plain_text
 

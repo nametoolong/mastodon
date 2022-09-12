@@ -282,7 +282,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     return false unless @status.text_changed?
 
     old, new = @status.text_change
-    HtmlAwareFormatter.new(old, false).to_s != HtmlAwareFormatter.new(new, false).to_s
+    HtmlAwareFormatter.format(old, false) != HtmlAwareFormatter.format(new, false)
   end
 
   def already_updated_more_recently?

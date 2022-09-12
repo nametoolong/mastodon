@@ -1,26 +1,13 @@
 # frozen_string_literal: true
 
-class HtmlAwareFormatter
-  attr_reader :text, :local, :options
-
-  alias local? local
-
-  # @param [String] text
-  # @param [Boolean] local
-  # @param [Hash] options
-  def initialize(text, local, options = {})
-    @text    = text
-    @local   = local
-    @options = options
-  end
-
-  def to_s
+module HtmlAwareFormatter
+  def self.format(text, local, options = {})
     return ''.html_safe if text.blank?
 
-    if local?
-      linkify
+    if local
+      linkify(text, options)
     else
-      reformat.html_safe # rubocop:disable Rails/OutputSafety
+      reformat(text).html_safe # rubocop:disable Rails/OutputSafety
     end
   rescue ArgumentError
     ''.html_safe
@@ -28,11 +15,11 @@ class HtmlAwareFormatter
 
   private
 
-  def reformat
+  def self.reformat(text)
     Sanitize.fragment(text, Sanitize::Config::MASTODON_STRICT)
   end
 
-  def linkify
-    TextFormatter.new(text, options).to_s
+  def self.linkify(text, options)
+    TextFormatter.instance.format(text, options)
   end
 end

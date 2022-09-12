@@ -1,30 +1,20 @@
 # frozen_string_literal: true
 
-class PlainTextFormatter
-  include ActionView::Helpers::TextHelper
-
+module PlainTextFormatter
   NEWLINE_TAGS_RE = /(<br \/>|<br>|<\/p>)+/.freeze
 
-  attr_reader :text, :local
-
-  alias local? local
-
-  def initialize(text, local)
-    @text  = text
-    @local = local
-  end
-
-  def to_s
-    if local?
-      text
-    else
-      strip_tags(insert_newlines).chomp
-    end
+  def self.format(text, local)
+    return text if local
+    sanitizer.sanitize(insert_newlines(text)).chomp
   end
 
   private
 
-  def insert_newlines
+  def self.insert_newlines(text)
     text.gsub(NEWLINE_TAGS_RE) { |match| "#{match}\n" }
+  end
+
+  def self.sanitizer
+    @sanitizer ||= Rails::Html::FullSanitizer.new
   end
 end

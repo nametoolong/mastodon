@@ -4,7 +4,7 @@ RSpec.describe EmojiFormatter do
   let!(:emoji) { Fabricate(:custom_emoji, shortcode: 'coolcat') }
 
   def preformat_text(str)
-    TextFormatter.new(str).to_s
+    TextFormatter.instance.format(str)
   end
 
   describe '#to_s' do

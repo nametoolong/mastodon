@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe HtmlAwareFormatter do
   describe '#to_s' do
-    subject { described_class.new(text, local).to_s }
+    subject { described_class.format(text, local) }
 
     context 'when local' do
       let(:local) { true }

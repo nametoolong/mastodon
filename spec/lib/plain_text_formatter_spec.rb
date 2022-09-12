@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe PlainTextFormatter do
   describe '#to_s' do
-    subject { described_class.new(status.text, status.local?).to_s }
+    subject { described_class.format(status.text, status.local?) }
 
     context 'given a post with local status' do
       let(:status) { Fabricate(:status, text: '<p>a text by a nerd who uses an HTML tag in text</p>', uri: nil) }
