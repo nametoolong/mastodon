@@ -7,7 +7,7 @@ class Api::V1::Statuses::SourcesController < Api::BaseController
   before_action :set_status
 
   def show
-    render json: @status, serializer: REST::StatusSourceSerializer
+    render json: REST::StatusSourceSerializer.render(@status)
   end
 
   private

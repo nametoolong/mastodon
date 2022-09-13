@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class REST::StatusSourceSerializer < ActiveModel::Serializer
-  attributes :id, :text, :spoiler_text
+class REST::StatusSourceSerializer < Blueprinter::Base
+  fields :text, :spoiler_text
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 end
