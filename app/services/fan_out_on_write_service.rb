@@ -56,8 +56,13 @@ class FanOutOnWriteService < BaseService
   end
 
   def fan_out_to_public_streams!
-    broadcast_to_hashtag_streams!
-    broadcast_to_public_streams!
+    # Cache the payload first
+    anonymous_payload
+
+    redis.pipelined do
+      broadcast_to_hashtag_streams!
+      broadcast_to_public_streams!
+    end
   end
 
   def deliver_to_self!
