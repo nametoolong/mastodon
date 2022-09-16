@@ -20,9 +20,9 @@ module InlineRenderer
     end
 
     if current_account.nil?
-      return serializer.render_as_json(object, view: :guest)
+      serializer.render_as_json(object, view: :guest)
     else
-      return serializer.render_as_json(object, view: :logged_in, current_account: current_account)
+      serializer.render_as_json(object, view: :logged_in, current_account: current_account)
     end
   end
 end

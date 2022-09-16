@@ -113,7 +113,7 @@ module ApplicationHelper
   end
 
   def fa_icon(icon, attributes = {})
-    class_names = attributes[:class]&.strip || +""
+    class_names = attributes[:class]&.strip || +''
 
     class_names << ' ' unless class_names.empty?
     class_names << 'fa'

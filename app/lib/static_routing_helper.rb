@@ -22,10 +22,10 @@ module StaticRoutingHelper
   private
 
   def asset_host
-    @root_url ||= (
+    @root_url ||= begin
       Rails.configuration.action_controller.asset_host ||
       Rails.application.routes.url_helpers.root_url(host: ActionMailer::Base.default_url_options[:host])
-    )
+    end
   end
 
   def use_storage?

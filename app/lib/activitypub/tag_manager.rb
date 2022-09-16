@@ -15,7 +15,7 @@ class ActivityPub::TagManager
   URIS_FOR_PUBLIC_COLLECTION = [
     COLLECTIONS[:public],
     'as:Public',
-    'Public'
+    'Public',
   ]
 
   def public_collection?(uri)

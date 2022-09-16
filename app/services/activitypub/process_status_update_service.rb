@@ -182,7 +182,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     previous_mentions = @status.active_mentions.pluck(*mention_attributes).map! do |item|
       mention_attributes.zip(item).to_h
     end
-    current_mentions  = []
+    current_mentions = []
 
     @raw_mentions.each do |href|
       break if current_mentions.length > Status::MAX_MENTIONS_PER_STATUS
@@ -208,7 +208,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
     default_attributes = {
       status_id: @status.id,
       created_at: Time.now.utc,
-      updated_at: Time.now.utc
+      updated_at: Time.now.utc,
     }
     new_mentions = current_mentions.filter_map do |item|
       item.merge(default_attributes) unless item.include?(:id)

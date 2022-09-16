@@ -13,8 +13,6 @@ module HtmlAwareFormatter
     ''.html_safe
   end
 
-  private
-
   def self.reformat(text)
     Sanitize.fragment(text, Sanitize::Config::MASTODON_STRICT)
   end
@@ -22,4 +20,6 @@ module HtmlAwareFormatter
   def self.linkify(text, options)
     TextFormatter.instance.format(text, options)
   end
+
+  private_class_method :reformat, :linkify
 end

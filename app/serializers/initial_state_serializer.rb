@@ -75,11 +75,11 @@ class InitialStateSerializer < Blueprinter::Base
     store
   end
 
-  field :media_attachments do |object|
+  field :media_attachments do
     { accept_content_types: MediaAttachment.supported_file_extensions + MediaAttachment.supported_mime_types }
   end
 
-  field :languages do |object|
+  field :languages do
     LanguagesHelper::INITIAL_STATE_LOCALE_LIST
   end
 

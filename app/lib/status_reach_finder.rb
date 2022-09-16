@@ -41,7 +41,7 @@ class StatusReachFinder
       ids.merge(replies_account_ids)
     end
 
-    return ids.to_a
+    ids.to_a
   end
 
   def replied_to_account_id

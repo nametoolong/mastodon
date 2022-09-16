@@ -8,8 +8,6 @@ module PlainTextFormatter
     sanitizer.sanitize(insert_newlines(text)).chomp
   end
 
-  private
-
   def self.insert_newlines(text)
     text.gsub(NEWLINE_TAGS_RE) { |match| "#{match}\n" }
   end
@@ -17,4 +15,6 @@ module PlainTextFormatter
   def self.sanitizer
     @sanitizer ||= Rails::Html::FullSanitizer.new
   end
+
+  private_class_method :insert_newlines, :sanitizer
 end
