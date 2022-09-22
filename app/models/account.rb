@@ -446,6 +446,14 @@ class Account < ApplicationRecord
     def to_h
       { name: name, value: value, verified_at: verified_at }
     end
+
+    def bson_type
+      Hash::BSON_TYPE
+    end
+
+    def to_bson(...)
+      to_h.to_bson(...)
+    end
   end
 
   class << self

@@ -4,15 +4,20 @@ class FeedInsertWorker
   include Sidekiq::Worker
 
   def perform(status_id, id, type = 'home', options = {})
+    cache = RollingCache.new('mastoduck:fanout', 8000)
+
     @type      = type.to_sym
-    @status    = Status.find(status_id)
+    @status    = cache.get(options['status_cache_id']) if options['status_cache_id']
+    @status    = Status.find(status_id) if @status.nil?
     @options   = options.symbolize_keys
 
     case @type
     when :home, :tags
-      @follower = Account.find(id)
+      @follower = cache.get(options['follower_cache_id']) if options['follower_cache_id']
+      @follower = Account.find(id) if @follower.nil?
     when :list
-      @list     = List.find(id)
+      @list     = cache.get(options['list_cache_id']) if options['list_cache_id']
+      @list     = List.find(id) if @list.nil?
       @follower = @list.account
     end
 
@@ -46,7 +51,7 @@ class FeedInsertWorker
   def notify?
     return false if @type != :home || @status.reblog? || (@status.reply? && @status.in_reply_to_account_id != @status.account_id)
 
-    Follow.find_by(account: @follower, target_account: @status.account)&.notify?
+    Follow.find_by(account: @follower, target_account_id: @status.account_id)&.notify?
   end
 
   def perform_push

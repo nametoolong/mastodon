@@ -15,6 +15,10 @@ class FanOutOnWriteService < BaseService
 
     check_race_condition!
 
+    # Squeeze a few milliseconds by caching status id
+    @status_id = status.id
+    @cache = RollingCache.new('mastoduck:fanout', 8000)
+
     fan_out_to_local_recipients!
     fan_out_to_public_recipients! if broadcastable?
     fan_out_to_public_streams! if broadcastable?
@@ -78,42 +82,130 @@ class FanOutOnWriteService < BaseService
   end
 
   def notify_about_update!
-    @status.reblogged_by_accounts.merge(Account.local).select(:id).reorder(nil).find_in_batches do |accounts|
-      LocalNotificationWorker.push_bulk(accounts) do |account|
-        [account.id, @status.id, 'Status', 'update']
+    @status.reblogged_by_accounts.merge(Account.local).includes(:user).reorder(nil).find_in_batches(batch_size: 500).with_index do |accounts, batch|
+      if batch == 0
+        # Only cache the first batch
+        cache_ids = @cache.push_multi(accounts, :id, :username, :domain, :note, :display_name, :user, :fields, :suspended_at)
+        status_cache_id = @cache.push(@status, :id)
+        jobs = accounts.zip(cache_ids).map! do |account, cache_id|
+          [account.id, @status_id, 'Status', 'update', {
+            'activity_cache_id' => status_cache_id,
+            'receiver_cache_id' => cache_id
+          }]
+        end
+      else
+        jobs = accounts.map! do |account|
+          [account.id, @status_id, 'Status', 'update', {
+            'activity_cache_id' => status_cache_id
+          }]
+        end
       end
+
+      LocalNotificationWorker.perform_bulk(jobs)
     end
   end
 
   def deliver_to_all_followers!
-    @account.followers_for_local_distribution.select(:id).reorder(nil).find_in_batches do |followers|
-      FeedInsertWorker.push_bulk(followers) do |follower|
-        [@status.id, follower.id, 'home', { 'update' => update? }]
+    @account.followers_for_local_distribution.select(:id).reorder(nil).find_in_batches(batch_size: 500).with_index do |followers, batch|
+      if batch == 0
+        # Only cache the first batch
+        cache_ids = @cache.push_multi(followers, :id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        jobs = followers.zip(cache_ids).map! do |follower, cache_id|
+          [@status_id, follower.id, 'home', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id,
+            'follower_cache_id' => cache_id
+          }]
+        end
+      else
+        jobs = followers.map! do |follower|
+          [@status_id, follower.id, 'home', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id
+          }]
+        end
       end
+
+      FeedInsertWorker.perform_bulk(jobs)
     end
   end
 
   def deliver_to_hashtag_followers!
-    TagFollow.where(tag_id: @status.tags.map(&:id)).select(:id, :account_id).reorder(nil).find_in_batches do |follows|
-      FeedInsertWorker.push_bulk(follows) do |follow|
-        [@status.id, follow.account_id, 'tags', { 'update' => update? }]
+    TagFollow.where(tag_id: @status.tags.map(&:id)).select(:id, :account_id).includes(:account).reorder(nil).find_in_batches(batch_size: 500).with_index do |follows, batch|
+      if batch == 0
+        # Only cache the first batch
+        cache_ids = @cache.push_multi(follows.map(&:account), :id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        jobs = follows.zip(cache_ids).map! do |follow, cache_id|
+          [@status_id, follow.account_id, 'tags', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id,
+            'follower_cache_id' => cache_id
+          }]
+        end
+      else
+        jobs = follows.map! do |follow|
+          [@status_id, follow.account_id, 'tags', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id
+          }]
+        end
       end
+
+      FeedInsertWorker.perform_bulk(jobs)
     end
   end
 
   def deliver_to_lists!
-    @account.lists_for_local_distribution.select(:id).reorder(nil).find_in_batches do |lists|
-      FeedInsertWorker.push_bulk(lists) do |list|
-        [@status.id, list.id, 'list', { 'update' => update? }]
+    @account.lists_for_local_distribution.select(:id, :account_id).includes(:account).reorder(nil).find_in_batches(batch_size: 500).with_index do |lists, batch|
+      if batch == 0
+        # Only cache the first batch
+        cache_ids = @cache.push_multi(lists, :id, :account_id, :account)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        jobs = lists.zip(cache_ids).map! do |list, cache_id|
+          [@status_id, list.id, 'list', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id,
+            'list_cache_id' => cache_id
+          }]
+        end
+      else
+        jobs = lists.map! do |list|
+          [@status_id, list.id, 'list', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id
+          }]
+        end
       end
+
+      FeedInsertWorker.perform_bulk(jobs)
     end
   end
 
   def deliver_to_mentioned_followers!
-    @status.mentions.joins(:account).merge(@account.followers_for_local_distribution).select(:id, :account_id).reorder(nil).find_in_batches do |mentions|
-      FeedInsertWorker.push_bulk(mentions) do |mention|
-        [@status.id, mention.account_id, 'home', { 'update' => update? }]
+    @status.mentions.joins(:account).merge(@account.followers_for_local_distribution).select(:id, :account_id).includes(:account).reorder(nil).find_in_batches(batch_size: 500).with_index do |mentions, batch|
+      if batch == 0
+        # Only cache the first batch
+        cache_ids = @cache.push_multi(mentions.map(&:account), :id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        jobs = mentions.zip(cache_ids).map! do |mention, cache_id|
+          [@status_id, mention.account_id, 'home', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id,
+            'follower_cache_id' => cache_id
+          }]
+        end
+      else
+        jobs = mentions.map! do |follow|
+          [@status_id, mention.account_id, 'home', {
+            'update' => update?,
+            'status_cache_id' => status_cache_id
+          }]
+        end
       end
+
+      FeedInsertWorker.perform_bulk(jobs)
     end
   end
 
