@@ -110,7 +110,7 @@ class FanOutOnWriteService < BaseService
       if batch == 0
         # Only cache the first batch
         cache_ids = @cache.push_multi(followers, :id)
-        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
         jobs = followers.zip(cache_ids).map! do |follower, cache_id|
           [@status_id, follower.id, 'home', {
             'update' => update?,
@@ -136,7 +136,7 @@ class FanOutOnWriteService < BaseService
       if batch == 0
         # Only cache the first batch
         cache_ids = @cache.push_multi(follows.map(&:account), :id)
-        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
         jobs = follows.zip(cache_ids).map! do |follow, cache_id|
           [@status_id, follow.account_id, 'tags', {
             'update' => update?,
@@ -162,7 +162,7 @@ class FanOutOnWriteService < BaseService
       if batch == 0
         # Only cache the first batch
         cache_ids = @cache.push_multi(lists, :id, :account_id, :account)
-        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
         jobs = lists.zip(cache_ids).map! do |list, cache_id|
           [@status_id, list.id, 'list', {
             'update' => update?,
@@ -188,7 +188,7 @@ class FanOutOnWriteService < BaseService
       if batch == 0
         # Only cache the first batch
         cache_ids = @cache.push_multi(mentions.map(&:account), :id)
-        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :account_id, :in_reply_to_account_id)
+        status_cache_id = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
         jobs = mentions.zip(cache_ids).map! do |mention, cache_id|
           [@status_id, mention.account_id, 'home', {
             'update' => update?,
