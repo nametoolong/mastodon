@@ -15,9 +15,12 @@ class ActivityPub::DeliveryWorker
   def perform(json, source_account_id, inbox_url, options = {})
     return unless DeliveryFailureTracker.available?(inbox_url)
 
+    cache = RollingCache.new('mastoduck:delivery', 5000)
+
     @options        = options.with_indifferent_access
     @json           = json
-    @source_account = Account.find(source_account_id)
+    @source_account = cache.get(options['account_cache_id']) if options['account_cache_id']
+    @source_account = Account.find(source_account_id) if @source_account.nil?
     @inbox_url      = inbox_url
     @host           = Addressable::URI.parse(inbox_url).normalized_site
     @performed      = false

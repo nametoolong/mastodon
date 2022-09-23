@@ -26,7 +26,7 @@ class ActivityPub::RawDistributionWorker
     return if inboxes.empty?
 
     ActivityPub::DeliveryWorker.push_bulk(inboxes) do |inbox_url|
-      [payload, source_account_id, inbox_url, options]
+      [payload, source_account_id, inbox_url, options.merge('account_cache_id' => account_cache_id)]
     end
   end
 
@@ -36,6 +36,10 @@ class ActivityPub::RawDistributionWorker
 
   def source_account_id
     @account.id
+  end
+
+  def account_cache_id
+    @cache_id ||= RollingCache.new('mastoduck:delivery', 5000).push(@account, :id, :username, :domain, :private_key, :public_key, :uri, :url)
   end
 
   def inboxes
