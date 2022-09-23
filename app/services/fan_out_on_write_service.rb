@@ -111,7 +111,7 @@ class FanOutOnWriteService < BaseService
       @account.followers_for_local_distribution.select(:id),
       first_batch: ->(records, context) {
         cache_ids = @cache.push_multi(records, :id)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
+        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
         records.zip(cache_ids).map! do |follower, cache_id|
           [@status_id, follower.id, 'home', {
             'update' => update?,
@@ -134,10 +134,17 @@ class FanOutOnWriteService < BaseService
   def deliver_to_hashtag_followers!
     push_in_batch(
       FeedInsertWorker,
-      TagFollow.where(tag_id: @status.tags.map(&:id)).select(:id, :account_id).includes(:account),
+      TagFollow.where(tag_id: @status.tags.map(&:id)).select(:id, :account_id),
       first_batch: ->(records, context) {
-        cache_ids = @cache.push_multi(records.map(&:account), :id)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
+        cache_entries = records.map do |follow|
+          {
+            'type' => 'bson',
+            'class' => 'Account',
+            'content' => { id: follow.account_id }.to_bson.to_s
+          }
+        end
+        cache_ids = @cache.push_direct_multi(cache_entries)
+        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
         records.zip(cache_ids).map! do |follow, cache_id|
           [@status_id, follow.account_id, 'tags', {
             'update' => update?,
@@ -160,15 +167,24 @@ class FanOutOnWriteService < BaseService
   def deliver_to_lists!
     push_in_batch(
       FeedInsertWorker,
-      @account.lists_for_local_distribution.select(:id, :account_id).includes(:account),
+      @account.lists_for_local_distribution.select(:id, :account_id),
       first_batch: ->(records, context) {
-        cache_ids = @cache.push_multi(records, :id, :account_id, :account)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
-        records.zip(cache_ids).map! do |list, cache_id|
+        list_cache_ids = @cache.push_multi(records, :id, :account_id)
+        owner_cache_entries = records.map do |list|
+          {
+            'type' => 'bson',
+            'class' => 'Account',
+            'content' => { id: list.account_id }.to_bson.to_s
+          }
+        end
+        owner_cache_ids = @cache.push_direct_multi(owner_cache_entries)
+        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
+        records.zip(list_cache_ids, owner_cache_ids).map! do |list, list_cache_id, owner_cache_id|
           [@status_id, list.id, 'list', {
             'update' => update?,
             'status_cache_id' => context[:status],
-            'list_cache_id' => cache_id
+            'follower_cache_id' => owner_cache_id,
+            'list_cache_id' => list_cache_id
           }]
         end
       },
@@ -186,10 +202,17 @@ class FanOutOnWriteService < BaseService
   def deliver_to_mentioned_followers!
     push_in_batch(
       FeedInsertWorker,
-      @status.mentions.joins(:account).merge(@account.followers_for_local_distribution).select(:id, :account_id).includes(:account),
+      @status.mentions.joins(:account).merge(@account.followers_for_local_distribution).select(:id, :account_id),
       first_batch: ->(records, context) {
-        cache_ids = @cache.push_multi(records.map(&:account), :id)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reblog, :reply, :language, :account_id, :in_reply_to_account_id)
+        cache_entries = records.map do |mention|
+          {
+            'type' => 'bson',
+            'class' => 'Account',
+            'content' => { id: mention.account_id }.to_bson.to_s
+          }
+        end
+        cache_ids = @cache.push_direct_multi(cache_entries)
+        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
         records.zip(cache_ids).map! do |mention, cache_id|
           [@status_id, mention.account_id, 'home', {
             'update' => update?,

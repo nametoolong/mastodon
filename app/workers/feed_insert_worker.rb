@@ -18,7 +18,8 @@ class FeedInsertWorker
     when :list
       @list     = cache.get(options['list_cache_id']) if options['list_cache_id']
       @list     = List.find(id) if @list.nil?
-      @follower = @list.account
+      @follower = cache.get(options['follower_cache_id']) if options['follower_cache_id']
+      @follower = @list.account if @follower.nil?
     end
 
     check_and_insert
