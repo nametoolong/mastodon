@@ -406,6 +406,7 @@ class Account < ApplicationRecord
 
   class Field
     include ActiveModel::Model
+    include ActiveModel::Serialization
 
     attr_accessor :name, :value, :verified_at, :account
 
