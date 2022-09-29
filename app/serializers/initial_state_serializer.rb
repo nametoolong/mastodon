@@ -22,6 +22,7 @@ class InitialStateSerializer < Blueprinter::Base
       mascot: instance_presenter.mascot&.file&.url,
       profile_directory: Setting.profile_directory,
       trends: Setting.trends,
+      registrations_open: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
     }
 
     if object[:current_account]
