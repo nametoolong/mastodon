@@ -82,6 +82,7 @@ class Api::V1::StatusesController < Api::BaseController
     authorize @status, :destroy?
 
     @status.discard
+    StatusPin.find_by(status: @status)&.destroy
     @status.account.statuses_count = @status.account.statuses_count - 1
     json = render_blueprint_with_account(REST::StatusSerializer, @status, source_requested: true)
 
