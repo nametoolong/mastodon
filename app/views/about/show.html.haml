@@ -17,25 +17,12 @@
         = render 'registration'
 
       .directory
-        - if Setting.profile_directory
-          .directory__tag
-            = link_to explore_path do
-              %h4
-                = fa_icon 'address-book fw'
-                = t('about.discover_users')
-                %small= t('about.browse_directory')
-
-              .avatar-stack
-                - @instance_presenter.sample_account_avatars.each do |avatar|
-                  = image_tag current_account&.user&.setting_auto_play_gif ? avatar[:avatar_original_url] : avatar[:avatar_static_url], alt: '', class: 'account__avatar'
-
-        - if Setting.timeline_preview
-          .directory__tag
-            = link_to public_timeline_path do
-              %h4
-                = fa_icon 'globe fw'
-                = t('about.see_whats_happening')
-                %small= t('about.browse_public_posts')
+        .directory__tag
+          = link_to web_path do
+            %h4
+              = fa_icon 'globe fw'
+              = t('about.see_whats_happening')
+              %small= t('about.browse_public_posts')
 
         .directory__tag
           = link_to 'https://joinmastodon.org/apps', target: '_blank', rel: 'noopener noreferrer' do
