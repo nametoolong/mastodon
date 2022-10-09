@@ -20,6 +20,8 @@ class InitialStateSerializer < Blueprinter::Base
       profile_directory: Setting.profile_directory,
       trends: Setting.trends,
       registrations_open: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
+      timeline_preview: Setting.timeline_preview,
+      activity_api_enabled: Setting.activity_api_enabled,
     }
 
     if object[:current_account]
