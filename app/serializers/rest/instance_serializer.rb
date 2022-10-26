@@ -80,12 +80,19 @@ class REST::InstanceSerializer < ActiveModel::Serializer
 
   def registrations
     {
-      enabled: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
+      enabled: registrations_enabled?,
       approval_required: Setting.registrations_mode == 'approved',
+      closed_registrations_message: registrations_enabled? ? nil : Setting.closed_registrations_message,
     }
   end
 
   def contact
     ContactSerializer.render_as_json(object.contact)
+  end
+
+  private
+
+  def registrations_enabled?
+    Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 end
