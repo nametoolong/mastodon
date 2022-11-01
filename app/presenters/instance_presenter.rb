@@ -1,19 +1,51 @@
 # frozen_string_literal: true
 
-class InstancePresenter
-  delegate(
-    :site_contact_email,
-    :site_title,
-    :site_short_description,
-    :site_description,
-    :site_extended_description,
-    :site_terms,
-    :closed_registrations_message,
-    to: Setting
-  )
+class InstancePresenter < ActiveModelSerializers::Model
+  attributes :domain, :title, :version, :source_url,
+             :description, :languages, :rules, :contact
 
-  def contact_account
-    Account.find_local(Setting.site_contact_username.strip.gsub(/\A@/, ''))
+  class ContactPresenter < ActiveModelSerializers::Model
+    attributes :email, :account
+
+    def email
+      Setting.site_contact_email
+    end
+
+    def account
+      Account.find_local(Setting.site_contact_username.strip.gsub(/\A@/, ''))
+    end
+  end
+
+  def contact
+    ContactPresenter.new
+  end
+
+  def closed_registrations_message
+    Setting.closed_registrations_message
+  end
+
+  def description
+    Setting.site_short_description
+  end
+
+  def extended_description
+    Setting.site_extended_description
+  end
+
+  def privacy_policy
+    Setting.site_terms
+  end
+
+  def domain
+    Rails.configuration.x.local_domain
+  end
+
+  def title
+    Setting.site_title
+  end
+
+  def languages
+    [I18n.default_locale]
   end
 
   def rules
@@ -36,8 +68,8 @@ class InstancePresenter
     Rails.cache.fetch('distinct_domain_count') { Instance.count }
   end
 
-  def version_number
-    Mastodon::Version
+  def version
+    Mastodon::Version.to_s
   end
 
   def source_url

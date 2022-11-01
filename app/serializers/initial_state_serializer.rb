@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class InitialStateSerializer < Blueprinter::Base
-  extend ActionView::Helpers::AssetTagHelper
-  extend Webpacker::Helper
-
   field :meta do |object|
     instance_presenter = InstancePresenter.new
 
@@ -11,13 +8,13 @@ class InitialStateSerializer < Blueprinter::Base
       streaming_api_base_url: Rails.configuration.x.streaming_api_base_url,
       access_token: object[:token],
       locale: I18n.locale,
-      domain: Rails.configuration.x.local_domain,
-      title: instance_presenter.site_title,
+      domain: instance_presenter.domain,
+      title: instance_presenter.title,
       admin: object[:admin]&.id&.to_s,
       search_enabled: Chewy.enabled?,
       repository: Mastodon::Version.repository,
-      source_url: Mastodon::Version.source_url,
-      version: Mastodon::Version.to_s,
+      source_url: instance_presenter.source_url,
+      version: instance_presenter.version,
       limited_federation_mode: Rails.configuration.x.whitelist_mode,
       mascot: instance_presenter.mascot&.file&.url,
       profile_directory: Setting.profile_directory,
@@ -89,15 +86,6 @@ class InitialStateSerializer < Blueprinter::Base
 
   field :push_subscription do |object|
     REST::WebPushSubscriptionSerializer.new(object[:push_subscription]).as_json if object[:push_subscription]
-  end
-
-  field :server do |object|
-    instance_presenter = InstancePresenter.new
-
-    {
-      hero: instance_presenter.hero&.file&.url || instance_presenter.thumbnail&.file&.url || asset_pack_path('media/images/preview.png'),
-      description: instance_presenter.site_short_description.presence || I18n.t('about.about_mastodon_html'),
-    }
   end
 
   field :settings

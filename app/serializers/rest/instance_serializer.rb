@@ -1,61 +1,38 @@
 # frozen_string_literal: true
 
 class REST::InstanceSerializer < ActiveModel::Serializer
+  class ContactSerializer < Blueprinter::Base
+    field :email
+    association :account, blueprint: REST::AccountSerializer
+  end
+
   include RoutingHelper
 
-  attributes :uri, :title, :short_description, :description, :email,
-             :version, :urls, :stats, :thumbnail,
-             :languages, :registrations, :approval_required, :invites_enabled,
-             :configuration
+  attributes :domain, :title, :version, :source_url, :description,
+             :usage, :thumbnail, :languages, :configuration,
+             :registrations
 
-  attribute :contact_account
-
+  attribute :contact
   has_many :rules, serializer: REST::RuleSerializer
 
-  delegate :rules, to: :instance_presenter
-
-  def uri
-    Rails.configuration.x.local_domain
-  end
-
-  def title
-    Setting.site_title
-  end
-
-  def short_description
-    Setting.site_short_description
-  end
-
-  def description
-    Setting.site_description
-  end
-
-  def email
-    Setting.site_contact_email
-  end
-
-  def version
-    Mastodon::Version.to_s
-  end
-
   def thumbnail
-    instance_presenter.thumbnail ? full_asset_url(instance_presenter.thumbnail.file.url) : full_pack_url('media/images/preview.png')
+    object.thumbnail ? full_asset_url(object.thumbnail.file.url) : full_pack_url('media/images/preview.png')
   end
 
-  def stats
+  def usage
     {
-      user_count: instance_presenter.user_count,
-      status_count: instance_presenter.status_count,
-      domain_count: instance_presenter.domain_count,
+      users: {
+        active_month: object.active_user_count(4),
+      },
     }
-  end
-
-  def urls
-    { streaming_api: Rails.configuration.x.streaming_api_base_url }
   end
 
   def configuration
     {
+      urls: {
+        streaming: Rails.configuration.x.streaming_api_base_url,
+      },
+
       statuses: {
         max_characters: StatusLengthValidator::MAX_CHARS,
         max_media_attachments: 4,
@@ -80,29 +57,14 @@ class REST::InstanceSerializer < ActiveModel::Serializer
     }
   end
 
-  def languages
-    [I18n.default_locale]
-  end
-
   def registrations
-    Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
+    {
+      enabled: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
+      approval_required: Setting.registrations_mode == 'approved',
+    }
   end
 
-  def approval_required
-    Setting.registrations_mode == 'approved'
-  end
-
-  def invites_enabled
-    UserRole.everyone.can?(:invite_users)
-  end
-
-  def contact_account
-    REST::AccountSerializer.render_as_json(instance_presenter.contact_account) if instance_presenter.contact_account
-  end
-
-  private
-
-  def instance_presenter
-    @instance_presenter ||= InstancePresenter.new
+  def contact
+    ContactSerializer.render_as_json(object.contact) if object.contact
   end
 end
