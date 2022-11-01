@@ -4,9 +4,7 @@ class InstancePresenter < ActiveModelSerializers::Model
   attributes :domain, :title, :version, :source_url,
              :description, :languages, :rules, :contact
 
-  class ContactPresenter < ActiveModelSerializers::Model
-    attributes :email, :account
-
+  class ContactPresenter
     def email
       Setting.site_contact_email
     end

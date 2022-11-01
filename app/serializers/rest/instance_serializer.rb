@@ -65,6 +65,6 @@ class REST::InstanceSerializer < ActiveModel::Serializer
   end
 
   def contact
-    ContactSerializer.render_as_json(object.contact) if object.contact
+    ContactSerializer.render_as_json(object.contact)
   end
 end

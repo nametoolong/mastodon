@@ -29,7 +29,7 @@ class REST::V1::InstanceSerializer < ActiveModel::Serializer
   end
 
   def contact_account
-    object.contact.account
+    REST::AccountSerializer.render_as_json(object.contact.account) if object.contact.account
   end
 
   def thumbnail
@@ -92,10 +92,6 @@ class REST::V1::InstanceSerializer < ActiveModel::Serializer
 
   def invites_enabled
     UserRole.everyone.can?(:invite_users)
-  end
-
-  def contact_account
-    REST::AccountSerializer.render_as_json(instance_presenter.contact_account) if instance_presenter.contact_account
   end
 
   private
