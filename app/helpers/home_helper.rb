@@ -27,7 +27,7 @@ module HomeHelper
     def account_section(account)
       content_tag(:div,
                   image_tag(full_asset_url(current_account&.user&.setting_auto_play_gif ? account.avatar_original_url : account.avatar_static_url),
-                            class: 'account__avatar'),
+                            class: 'account__avatar', width: 46, height: 46),
                   class: 'account__avatar-wrapper') <<
       content_tag(:span,
                   content_tag(:bdi,
