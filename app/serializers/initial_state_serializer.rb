@@ -22,6 +22,7 @@ class InitialStateSerializer < Blueprinter::Base
       registrations_open: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
       timeline_preview: Setting.timeline_preview,
       activity_api_enabled: Setting.activity_api_enabled,
+      single_user_mode: Rails.configuration.x.single_user_mode,
     }
 
     if object[:current_account]
@@ -48,6 +49,10 @@ class InitialStateSerializer < Blueprinter::Base
       store[:crop_images]   = Setting.crop_images
     end
 
+    if Rails.configuration.x.single_user_mode
+      store[:owner] = object[:owner]&.id&.to_s
+    end
+
     store
   end
 
@@ -72,8 +77,10 @@ class InitialStateSerializer < Blueprinter::Base
 
     current_account = object[:current_account]
     admin = object[:admin]
+    owner = object[:owner]
     store[current_account.id.to_s] = REST::AccountSerializer.render_as_json(current_account) if current_account
     store[admin.id.to_s]           = REST::AccountSerializer.render_as_json(admin) if admin
+    store[owner.id.to_s]           = REST::AccountSerializer.render_as_json(owner) if owner
 
     store
   end
