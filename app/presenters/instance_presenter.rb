@@ -36,18 +36,6 @@ class InstancePresenter
     Rails.cache.fetch('distinct_domain_count') { Instance.count }
   end
 
-  def sample_account_avatars
-    Rails.cache.fetch('sample_account_avatars', expires_in: 12.hours) do
-      popular_accounts = Account.local.discoverable.popular
-      popular_accounts.limit(3).map do |acct|
-        {
-          avatar_original_url: acct.avatar_original_url,
-          avatar_static_url: acct.avatar_static_url,
-        }
-      end
-    end
-  end
-
   def version_number
     Mastodon::Version
   end
