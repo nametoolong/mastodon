@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class InitialStateSerializer < Blueprinter::Base
+  extend ActionView::Helpers::AssetTagHelper
+  extend Webpacker::Helper
+
   field :meta do |object|
     instance_presenter = InstancePresenter.new
 
@@ -85,6 +88,15 @@ class InitialStateSerializer < Blueprinter::Base
 
   field :push_subscription do |object|
     REST::WebPushSubscriptionSerializer.new(object[:push_subscription]).as_json if object[:push_subscription]
+  end
+
+  field :server do |object|
+    instance_presenter = InstancePresenter.new
+
+    {
+      hero: instance_presenter.hero&.file&.url || instance_presenter.thumbnail&.file&.url || asset_pack_path('media/images/preview.png'),
+      description: instance_presenter.site_short_description.presence || I18n.t('about.about_mastodon_html'),
+    }
   end
 
   field :settings

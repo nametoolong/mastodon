@@ -7,16 +7,10 @@ module StaticRoutingHelper
     URI.join(asset_host, source).to_s
   end
 
-  def tag_url(tag)
-    Rails.application.routes.url_helpers.tag_url(tag, host: ActionMailer::Base.default_url_options[:host])
-  end
+  URL_HELPER_METHODS = %i(tag_url medium_url media_proxy_url)
 
-  def medium_url(media)
-    Rails.application.routes.url_helpers.medium_url(media, host: ActionMailer::Base.default_url_options[:host])
-  end
-
-  def media_proxy_url(*args)
-    Rails.application.routes.url_helpers.media_proxy_url(*args, host: ActionMailer::Base.default_url_options[:host])
+  URL_HELPER_METHODS.each do |name|
+    define_method(name, ->(*args) { delegate_to_url_helper(name, args) })
   end
 
   private
@@ -30,5 +24,11 @@ module StaticRoutingHelper
 
   def use_storage?
     Rails.configuration.x.use_s3 || Rails.configuration.x.use_swift
+  end
+
+  def delegate_to_url_helper(method, args)
+    @url_helpers ||= Rails.application.routes.url_helpers
+    @url_options ||= { host: ActionMailer::Base.default_url_options[:host] }
+    @url_helpers.send(method, *args, **@url_options)
   end
 end
