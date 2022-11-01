@@ -72,6 +72,12 @@ class REST::AccountSerializer < Blueprinter::Base
     object.silenced?
   end
 
+  field :noindex, if: -> (_name, object, options) {
+    object.local?
+  } do |object|
+    object.user_prefers_noindex?
+  end
+
   field :fields do |object|
     if object.suspended?
       []
