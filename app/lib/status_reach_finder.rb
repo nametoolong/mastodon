@@ -58,7 +58,7 @@ class StatusReachFinder
 
   # Beware: Reblogs can be created without the author having had access to the status
   def reblogs_account_ids
-    @status.reblogs.pluck(:account_id)
+    @status.reblogs.rewhere(deleted_at: [nil, @status.deleted_at]).pluck(:account_id)
   end
 
   # Beware: Favourites can be created without the author having had access to the status
