@@ -38,13 +38,13 @@ class REST::StatusSerializer < Blueprinter::Base
     ActivityPub::TagManager.instance.url_for(object)
   end
 
-  field :content, if: -> (_name, object, options) {
+  field :content, if: ->(_name, object, options) {
     !options[:source_requested]
   } do |object|
     status_content_format(object)
   end
 
-  field :text, if: -> (_name, object, options) {
+  field :text, if: ->(_name, object, options) {
     options[:source_requested]
   }
 
@@ -61,7 +61,7 @@ class REST::StatusSerializer < Blueprinter::Base
 
   field :tags do |object|
     object.tags.map do |tag|
-      {name: tag.name, url: tag_url(tag)}
+      { name: tag.name, url: tag_url(tag) }
     end
   end
 
@@ -70,16 +70,20 @@ class REST::StatusSerializer < Blueprinter::Base
   association :preview_card, name: :card, blueprint: REST::PreviewCardSerializer
   association :ordered_media_attachments, name: :media_attachments, blueprint: REST::MediaAttachmentSerializer
 
+  @@_application = proc do |object|
+    object.application && { name: object.application.name, website: object.application.website.presence }
+  end
+
+  mattr_accessor :_application
+
   view :guest do
     field :sensitive do |object|
       object.account.sensitized? || object.sensitive
     end
 
-    field :application, if: -> (_name, object, options) {
+    field :application, if: ->(_name, object, options) {
       object.account.user_shows_application?
-    } do |object|
-      object.application && {name: object.application.name, website: object.application.website.presence}
-    end
+    }, &@@_application
 
     association :reblog, blueprint: REST::StatusSerializer, view: :guest
     association :preloadable_poll, name: :poll, blueprint: REST::PollSerializer, view: :guest
@@ -94,11 +98,9 @@ class REST::StatusSerializer < Blueprinter::Base
       end
     end
 
-    field :application, if: -> (_name, object, options) {
+    field :application, if: ->(_name, object, options) {
       object.account.user_shows_application? || options[:current_account].id == object.account_id
-    } do |object|
-      object.application && {name: object.application.name, website: object.application.website.presence}
-    end
+    }, &@@_application
 
     field :favourited do |object, options|
       if options[:relationships]
@@ -132,7 +134,7 @@ class REST::StatusSerializer < Blueprinter::Base
       end
     end
 
-    field :pinned, if: -> (_name, object, options) {
+    field :pinned, if: ->(_name, object, options) {
         options[:current_account].id == object.account_id &&
         !object.reblog? &&
         %w(public unlisted private).include?(object.visibility)
