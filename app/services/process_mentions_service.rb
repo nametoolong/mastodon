@@ -76,11 +76,27 @@ class ProcessMentionsService < BaseService
       return
     end
 
+    # Make sure we never mention blocked accounts
+    unless @current_mentions.empty?
+      mentioned_account_ids    = @current_mentions.map { |x| x[:account_id] }
+      mentioned_domain_by_acct = Hash[Account.where(id: mentioned_account_ids).pluck(:id, :domain)]
+      mentioned_domains        = mentioned_domain_by_acct.values()
+      mentioned_domains.compact!
+      mentioned_domains.uniq!
+
+      blocked_domains     = Set.new(mentioned_domains.empty? ? [] : AccountDomainBlock.where(account_id: @status.account_id, domain: mentioned_domains))
+      blocked_account_ids = Set.new(@status.account.block_relationships.where(target_account_id: mentioned_account_ids).pluck(:target_account_id))
+      blocked_account_ids.merge(mentioned_domain_by_acct.filter { |id, domain| blocked_domains.include?(domain) }.keys) unless blocked_domains.empty?
+
+      @current_mentions.reject! { |x| blocked_account_ids.include?(x[:account_id]) }
+    end
+
     default_attributes = {
       status_id: @status.id,
       created_at: Time.now.utc,
       updated_at: Time.now.utc,
     }
+
     new_mentions = @current_mentions.filter_map do |item|
       item.merge(default_attributes) unless item.include?(:id)
     end
