@@ -14,6 +14,7 @@ class FanOutOnWriteService < BaseService
     @options   = options
 
     check_race_condition!
+    warm_payload_cache!
 
     # Squeeze a few milliseconds by caching status id
     @status_id = status.id
@@ -255,11 +256,19 @@ class FanOutOnWriteService < BaseService
     AccountConversation.add_status(@account, @status) unless update?
   end
 
+  def warm_payload_cache!
+    Rails.cache.write("fan-out/#{@status.id}", rendered_status)
+  end
+
   def anonymous_payload
     @anonymous_payload ||= {
       event: update? ? :'status.update' : :update,
-      payload: InlineRenderer.render(@status, nil, :status)
+      payload: rendered_status
     }.to_bson.to_s
+  end
+
+  def rendered_status
+    @rendered_status ||= InlineRenderer.render(@status, nil, :status)
   end
 
   def update?
