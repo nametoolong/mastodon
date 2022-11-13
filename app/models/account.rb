@@ -64,6 +64,7 @@ class Account < ApplicationRecord
   USERNAME_RE   = /[a-z0-9_]+([a-z0-9_\.-]+[a-z0-9_]+)?/i
   MENTION_RE    = /(?<=^|[^\/[:word:]])@((#{USERNAME_RE})(?:@[[:word:]\.\-]+[[:word:]]+)?)/i
   URL_PREFIX_RE = /\Ahttp(s?):\/\/[^\/]+/
+  USERNAME_ONLY_RE = /\A#{USERNAME_RE}\z/i
 
   include Attachmentable
   include AccountAssociations
@@ -84,7 +85,7 @@ class Account < ApplicationRecord
   validates_with UniqueUsernameValidator, if: -> { will_save_change_to_username? }
 
   # Remote user validations
-  validates :username, format: { with: /\A#{USERNAME_RE}\z/i }, if: -> { !local? && will_save_change_to_username? }
+  validates :username, format: { with: USERNAME_ONLY_RE }, if: -> { !local? && will_save_change_to_username? }
 
   # Local user validations
   validates :username, format: { with: /\A[a-z0-9_]+\z/i }, length: { maximum: 30 }, if: -> { local? && will_save_change_to_username? && actor_type != 'Application' }
@@ -255,7 +256,7 @@ class Account < ApplicationRecord
     update!(memorial: true)
   end
 
-  def trendable
+  def trendable?
     boolean_with_default('trendable', Setting.trendable_by_default)
   end
 
@@ -295,7 +296,7 @@ class Account < ApplicationRecord
 
   def fields
     (self[:fields] || []).map do |f|
-      Field.new(self, f)
+      Account::Field.new(self, f)
     rescue
       nil
     end.compact
@@ -456,7 +457,7 @@ class Account < ApplicationRecord
 
   class << self
     DISALLOWED_TSQUERY_CHARACTERS = /['?\\:‘’]/.freeze
-    TEXTSEARCH = "(setweight(to_tsvector('simple', accounts.display_name), 'A') || setweight(to_tsvector('simple', accounts.username), 'A') || setweight(to_tsvector('simple', coalesce(accounts.domain, '')), 'C'))"
+    TEXTSEARCH = "(setweight(to_tsvector('simple', accounts.display_name), 'A') || setweight(to_tsvector('simple', accounts.username), 'B') || setweight(to_tsvector('simple', coalesce(accounts.domain, '')), 'C'))"
 
     REPUTATION_SCORE_FUNCTION = '(greatest(0, coalesce(s.followers_count, 0)) / (greatest(0, coalesce(s.following_count, 0)) + 1.0))'
     FOLLOWERS_SCORE_FUNCTION  = 'log(greatest(0, coalesce(s.followers_count, 0)) + 2)'

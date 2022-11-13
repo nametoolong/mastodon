@@ -3,7 +3,7 @@
 class REST::Admin::AccountSerializer < ActiveModel::Serializer
   attributes :id, :username, :domain, :created_at,
              :email, :ip, :role, :confirmed, :suspended,
-             :silenced, :disabled, :approved, :locale,
+             :silenced, :sensitized, :disabled, :approved, :locale,
              :invite_request, :account
 
   attribute :created_by_application_id, if: :created_by_application?
@@ -29,6 +29,10 @@ class REST::Admin::AccountSerializer < ActiveModel::Serializer
 
   def silenced
     object.silenced?
+  end
+
+  def sensitized
+    object.sensitized?
   end
 
   def confirmed

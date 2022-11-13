@@ -50,6 +50,9 @@ class InitialStateSerializer < Blueprinter::Base
       store[:crop_images]   = Setting.crop_images
     end
 
+    store[:disabled_account_id] = object[:disabled_account].id.to_s if object[:disabled_account]
+    store[:moved_to_account_id] = object[:moved_to_account].id.to_s if object[:moved_to_account]
+
     if Rails.configuration.x.single_user_mode
       store[:owner] = object[:owner]&.id&.to_s
     end
@@ -73,17 +76,16 @@ class InitialStateSerializer < Blueprinter::Base
     store
   end
 
+  RELEVANT_ACCOUNTS = %i(current_account admin owner disabled_account moved_to_account)
+
   field :accounts do |object|
-    store = {}
+    accounts = RELEVANT_ACCOUNTS.filter_map { |name| object[name] }
 
-    current_account = object[:current_account]
-    admin = object[:admin]
-    owner = object[:owner]
-    store[current_account.id.to_s] = REST::AccountSerializer.render_as_json(current_account) if current_account
-    store[admin.id.to_s]           = REST::AccountSerializer.render_as_json(admin) if admin
-    store[owner.id.to_s]           = REST::AccountSerializer.render_as_json(owner) if owner
+    ActiveRecord::Associations::Preloader.new.preload(accounts, [:account_stat, :user, { moved_to_account: [:account_stat, :user] }])
 
-    store
+    accounts.each_with_object({}) do |acct, h|
+      h[acct.id.to_s] = REST::AccountSerializer.render_as_json(acct)
+    end
   end
 
   field :media_attachments do
