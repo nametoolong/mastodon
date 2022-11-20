@@ -18,7 +18,7 @@ class FanOutOnWriteService < BaseService
 
     # Squeeze a few milliseconds by caching status id
     @status_id = status.id
-    @cache = RollingCache.new('mastoduck:fanout', 8000)
+    @cache = RollingCache.new('mastoduck:fanout', 10000)
 
     fan_out_to_local_recipients!
     fan_out_to_public_recipients! if broadcastable?
@@ -83,7 +83,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def notify_about_update!
-    push_in_batch(
+    push_in_batches(
       LocalNotificationWorker,
       @status.reblogged_by_accounts.merge(Account.local).includes(:user),
       first_batch: ->(records, context) {
@@ -96,7 +96,7 @@ class FanOutOnWriteService < BaseService
           }]
         end
       },
-      remaining_batch: ->(records, context) {
+      remaining_batches: ->(records, context) {
         records.map! do |account|
           [account.id, @status_id, 'Status', 'update', {
             'activity_cache_id' => context[:status]
@@ -107,7 +107,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_all_followers!
-    push_in_batch(
+    push_in_batches(
       FeedInsertWorker,
       @account.followers_for_local_distribution.select(:id),
       first_batch: ->(records, context) {
@@ -121,7 +121,7 @@ class FanOutOnWriteService < BaseService
           }]
         end
       },
-      remaining_batch: ->(records, context) {
+      remaining_batches: ->(records, context) {
         records.map! do |follower|
           [@status_id, follower.id, 'home', {
             'update' => update?,
@@ -133,7 +133,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_hashtag_followers!
-    push_in_batch(
+    push_in_batches(
       FeedInsertWorker,
       TagFollow.where(tag_id: @status.tags.map(&:id)).select(:id, :account_id),
       first_batch: ->(records, context) {
@@ -154,7 +154,7 @@ class FanOutOnWriteService < BaseService
           }]
         end
       },
-      remaining_batch: ->(records, context) {
+      remaining_batches: ->(records, context) {
         records.map! do |follow|
           [@status_id, follow.account_id, 'tags', {
             'update' => update?,
@@ -166,7 +166,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_lists!
-    push_in_batch(
+    push_in_batches(
       FeedInsertWorker,
       @account.lists_for_local_distribution.select(:id, :account_id),
       first_batch: ->(records, context) {
@@ -189,7 +189,7 @@ class FanOutOnWriteService < BaseService
           }]
         end
       },
-      remaining_batch: ->(records, context) {
+      remaining_batches: ->(records, context) {
         records.map! do |list|
           [@status_id, list.id, 'list', {
             'update' => update?,
@@ -201,7 +201,7 @@ class FanOutOnWriteService < BaseService
   end
 
   def deliver_to_mentioned_followers!
-    push_in_batch(
+    push_in_batches(
       FeedInsertWorker,
       @status.mentions.joins(:account).merge(@account.followers_for_local_distribution).select(:id, :account_id),
       first_batch: ->(records, context) {
@@ -222,7 +222,7 @@ class FanOutOnWriteService < BaseService
           }]
         end
       },
-      remaining_batch: ->(records, context) {
+      remaining_batches: ->(records, context) {
         records.map! do |mention|
           [@status_id, mention.account_id, 'home', {
             'update' => update?,
@@ -279,11 +279,11 @@ class FanOutOnWriteService < BaseService
     @status.public_visibility? && !@status.reblog? && !@account.silenced?
   end
 
-  def push_in_batch(klass, query, first_batch:, remaining_batch:)
+  def push_in_batches(klass, query, first_batch:, remaining_batches:)
     context = {}
 
-    query.reorder(nil).find_in_batches(batch_size: 500).with_index do |records, batch|
-      jobs = (batch == 0 ? first_batch : remaining_batch).call(records, context)
+    query.reorder(nil).find_in_batches.with_index do |records, batch|
+      jobs = (batch == 0 ? first_batch : remaining_batches).call(records, context)
       klass.perform_bulk(jobs)
     end
   end

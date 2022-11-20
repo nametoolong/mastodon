@@ -4,7 +4,7 @@ class FeedInsertWorker
   include Sidekiq::Worker
 
   def perform(status_id, id, type = 'home', options = {})
-    cache = RollingCache.new('mastoduck:fanout', 8000)
+    cache = RollingCache.new('mastoduck:fanout')
 
     @type      = type.to_sym
     @status    = cache.get(options['status_cache_id']) if options['status_cache_id']

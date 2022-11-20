@@ -15,7 +15,7 @@ class ActivityPub::DeliveryWorker
   def perform(json, source_account_id, inbox_url, options = {})
     return unless DeliveryFailureTracker.available?(inbox_url)
 
-    cache = RollingCache.new('mastoduck:delivery', 5000)
+    cache = RollingCache.new('mastoduck:delivery')
 
     @options        = options.with_indifferent_access
     @json           = json

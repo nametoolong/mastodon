@@ -8,7 +8,7 @@ class LocalNotificationWorker
       activity = Mention.find(receiver_account_id)
       receiver = activity.account
     else
-      cache = RollingCache.new('mastoduck:fanout', 8000)
+      cache = RollingCache.new('mastoduck:fanout')
 
       receiver = cache.get(options['receiver_cache_id']) if options['receiver_cache_id']
       receiver = Account.find(receiver_account_id) if receiver.nil?

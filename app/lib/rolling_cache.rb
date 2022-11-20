@@ -10,7 +10,7 @@ class RollingCache
   # Initialize an instance backed by +key+ and limited to
   # +size+ entries. No Redis command will be sent until
   # #push or #get is called.
-  def initialize(key, size)
+  def initialize(key, size = nil)
     @key = key
     @size = size
 
