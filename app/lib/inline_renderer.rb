@@ -15,15 +15,15 @@ module InlineRenderer
     when :reaction
       serializer = REST::ReactionSerializer
     when :encrypted_message
-      return REST::EncryptedMessageSerializer.render_as_json(object)
+      return REST::EncryptedMessageSerializer.render_as_hash(object)
     else
       return
     end
 
     if current_account.nil?
-      serializer.render_as_json(object, view: :guest)
+      serializer.render_as_hash(object, view: :guest)
     else
-      serializer.render_as_json(object, view: :logged_in, current_account: current_account)
+      serializer.render_as_hash(object, view: :logged_in, current_account: current_account)
     end
   end
 
