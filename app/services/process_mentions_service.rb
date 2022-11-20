@@ -60,7 +60,7 @@ class ProcessMentionsService < BaseService
       next match if mention_undeliverable?(mentioned_account) || mentioned_account&.suspended?
 
       mention   = @previous_mentions.find { |x| x[:account_id] == mentioned_account.id }
-      mention ||= {account_id: mentioned_account.id}
+      mention ||= { account_id: mentioned_account.id }
 
       @current_mentions << mention
 
@@ -90,6 +90,8 @@ class ProcessMentionsService < BaseService
 
       @current_mentions.reject! { |x| blocked_account_ids.include?(x[:account_id]) }
     end
+
+    @current_mentions.uniq!
 
     default_attributes = {
       status_id: @status.id,

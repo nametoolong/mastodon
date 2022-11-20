@@ -195,7 +195,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
       next if account.nil?
 
       mention   = previous_mentions.find { |x| x[:account_id] == account.id }
-      mention ||= {account_id: account.id}
+      mention ||= { account_id: account.id }
 
       current_mentions << mention
     end
@@ -205,11 +205,14 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
       return
     end
 
+    current_mentions.uniq!
+
     default_attributes = {
       status_id: @status.id,
       created_at: Time.now.utc,
       updated_at: Time.now.utc,
     }
+
     new_mentions = current_mentions.filter_map do |item|
       item.merge(default_attributes) unless item.include?(:id)
     end
