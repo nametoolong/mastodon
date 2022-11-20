@@ -1,15 +1,16 @@
 # frozen_string_literal: true
 
-class Account::Field < ActiveModelSerializers::Model
+class Account::Field
+  include ActiveModel::Model
+  include ActiveModel::Serialization
+
   MAX_CHARACTERS_LOCAL  = 255
   MAX_CHARACTERS_COMPAT = 2_047
   ACCEPTED_SCHEMES      = %w(https).freeze
 
-  attributes :name, :value, :verified_at, :account
+  attr_accessor :name, :value, :verified_at, :account
 
   def initialize(account, attributes)
-    # Keeping this as reference allows us to update the field on the account
-    # from methods in this class, so that changes can be saved.
     @original_field = attributes
     @account        = account
 
@@ -61,6 +62,14 @@ class Account::Field < ActiveModelSerializers::Model
 
   def to_h
     { name: name, value: value, verified_at: verified_at }
+  end
+
+  def bson_type
+    Hash::BSON_TYPE
+  end
+
+  def to_bson(...)
+    to_h.to_bson(...)
   end
 
   private
