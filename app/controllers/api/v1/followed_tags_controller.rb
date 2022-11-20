@@ -5,11 +5,11 @@ class Api::V1::FollowedTagsController < Api::BaseController
 
   TAGS_LIMIT = 100
 
-  before_action -> { doorkeeper_authorize! :follow, :read, :'read:follows' }, except: :show
+  before_action -> { doorkeeper_authorize! :follow, :read, :'read:follows' }
   before_action :require_user!
   before_action :set_results
 
-  after_action :insert_pagination_headers, only: :show
+  after_action :insert_pagination_headers
 
   def index
     render json: render_blueprint_with_account(REST::TagSerializer, @results.map(&:tag), relationships: TagRelationshipsPresenter.new(@results.map(&:tag), current_user&.account_id))
@@ -45,7 +45,7 @@ class Api::V1::FollowedTagsController < Api::BaseController
   end
 
   def records_continue?
-    @results.size == limit_param(TAG_LIMIT)
+    @results.size == limit_param(TAGS_LIMIT)
   end
 
   def pagination_params(core_params)
