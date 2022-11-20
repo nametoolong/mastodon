@@ -12,5 +12,7 @@ class Scheduler::RollingCacheCleanupScheduler
     CACHE_KEYS.each do |key|
       RollingCache.new(key).trim(CACHE_EXPIRATION_TIME)
     end
+  rescue Redis::CommandError
+    Rails.logger.warn 'Failed to trim the rolling cache. Please upgrade to Redis 6.2 or above.'
   end
 end
