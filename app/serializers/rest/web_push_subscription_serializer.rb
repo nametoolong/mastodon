@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-class REST::WebPushSubscriptionSerializer < ActiveModel::Serializer
-  attributes :id, :endpoint, :alerts, :server_key
+class REST::WebPushSubscriptionSerializer < Blueprinter::Base
+  fields :id, :endpoint
 
-  def alerts
+  field :alerts do |object|
     (object.data&.dig('alerts') || {}).each_with_object({}) { |(k, v), h| h[k] = ActiveModel::Type::Boolean.new.cast(v) }
   end
 
-  def server_key
+  field :server_key do
     Rails.configuration.x.vapid_public_key
   end
 end

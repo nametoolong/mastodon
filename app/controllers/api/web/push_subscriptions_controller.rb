@@ -33,12 +33,12 @@ class Api::Web::PushSubscriptionsController < Api::Web::BaseController
 
     active_session.update!(web_push_subscription: push_subscription)
 
-    render json: push_subscription, serializer: REST::WebPushSubscriptionSerializer
+    render json: REST::WebPushSubscriptionSerializer.render(push_subscription)
   end
 
   def update
     @push_subscription.update!(data: data_params)
-    render json: @push_subscription, serializer: REST::WebPushSubscriptionSerializer
+    render json: REST::WebPushSubscriptionSerializer.render(@push_subscription)
   end
 
   private

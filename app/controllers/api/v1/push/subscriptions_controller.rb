@@ -18,16 +18,16 @@ class Api::V1::Push::SubscriptionsController < Api::BaseController
       access_token_id: doorkeeper_token.id
     )
 
-    render json: @push_subscription, serializer: REST::WebPushSubscriptionSerializer
+    render json: REST::WebPushSubscriptionSerializer.render(@push_subscription)
   end
 
   def show
-    render json: @push_subscription, serializer: REST::WebPushSubscriptionSerializer
+    render json: REST::WebPushSubscriptionSerializer.render(@push_subscription)
   end
 
   def update
     @push_subscription.update!(data: data_params)
-    render json: @push_subscription, serializer: REST::WebPushSubscriptionSerializer
+    render json: REST::WebPushSubscriptionSerializer.render(@push_subscription)
   end
 
   def destroy

@@ -96,11 +96,8 @@ class InitialStateSerializer < Blueprinter::Base
     LanguagesHelper::INITIAL_STATE_LOCALE_LIST
   end
 
-  field :push_subscription do |object|
-    REST::WebPushSubscriptionSerializer.new(object[:push_subscription]).as_json if object[:push_subscription]
-  end
-
   field :settings
 
+  association :push_subscription, blueprint: REST::WebPushSubscriptionSerializer
   association :role, blueprint: REST::RoleSerializer
 end
