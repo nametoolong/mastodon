@@ -70,20 +70,14 @@ class REST::StatusSerializer < Blueprinter::Base
   association :preview_card, name: :card, blueprint: REST::PreviewCardSerializer
   association :ordered_media_attachments, name: :media_attachments, blueprint: REST::MediaAttachmentSerializer
 
-  @@_application = proc do |object|
-    object.application && { name: object.application.name, website: object.application.website.presence }
-  end
-
-  mattr_accessor :_application
-
   view :guest do
     field :sensitive do |object|
       object.account.sensitized? || object.sensitive
     end
 
-    field :application, if: ->(_name, object, options) {
+    association :application, if: ->(_name, object, options) {
       object.account.user_shows_application?
-    }, &@@_application
+    }, blueprint: REST::ApplicationSerializer, view: :public
 
     association :reblog, blueprint: REST::StatusSerializer, view: :guest
     association :preloadable_poll, name: :poll, blueprint: REST::PollSerializer, view: :guest
@@ -97,10 +91,6 @@ class REST::StatusSerializer < Blueprinter::Base
         object.account.sensitized? || object.sensitive
       end
     end
-
-    field :application, if: ->(_name, object, options) {
-      object.account.user_shows_application? || options[:current_account].id == object.account_id
-    }, &@@_application
 
     field :favourited do |object, options|
       if options[:relationships]
@@ -145,6 +135,10 @@ class REST::StatusSerializer < Blueprinter::Base
         options[:current_account].pinned?(object)
       end
     end
+
+    association :application, if: ->(_name, object, options) {
+      object.account.user_shows_application? || options[:current_account].id == object.account_id
+    }, blueprint: REST::ApplicationSerializer, view: :public
 
     association :filtered, blueprint: REST::FilterResultSerializer do |object, options|
       if options[:relationships]

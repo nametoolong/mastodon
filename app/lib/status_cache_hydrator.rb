@@ -11,7 +11,7 @@ class StatusCacheHydrator
 
     # If we're delivering to the author who disabled the display of the application used to create the
     # status, we need to hydrate the application, since it was not rendered for the basic payload
-    payload[:application] = REST::StatusSerializer._application.call(@status).stringify_keys if payload[:application].nil? && @status.account_id == account_id && @status.application.present?
+    payload[:application] = REST::ApplicationSerializer.render_as_json(@status.application, view: :public) if payload[:application].nil? && @status.account_id == account_id && @status.application.present?
 
     # We take advantage of the fact that some relationships can only occur with an original status, not
     # the reblog that wraps it, so we can assume that some values are always false
@@ -23,7 +23,7 @@ class StatusCacheHydrator
 
       # If the reblogged status is being delivered to the author who disabled the display of the application
       # used to create the status, we need to hydrate it here too
-      payload[:reblog][:application] = REST::StatusSerializer._application.call(@status.reblog).stringify_keys if payload[:reblog][:application].nil? && @status.reblog.account_id == account_id && @status.reblog.application.present?
+      payload[:reblog][:application] = REST::ApplicationSerializer.render_as_json(@status.reblog.application, view: :public) if payload[:reblog][:application].nil? && @status.reblog.account_id == account_id && @status.reblog.application.present?
 
       payload[:reblog][:favourited] = Favourite.where(account_id: account_id, status_id: @status.reblog_of_id).exists?
       payload[:reblog][:reblogged]  = Status.where(account_id: account_id, reblog_of_id: @status.reblog_of_id).exists?
