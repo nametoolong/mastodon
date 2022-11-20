@@ -58,3 +58,7 @@
     interval: 1 minute
     class: Scheduler::SuspendedUserCleanupScheduler
     queue: scheduler
+  rolling_cache_cleanup_scheduler:
+    interval: 5 minutes
+    class: Scheduler::RollingCacheCleanupScheduler
+    queue: scheduler

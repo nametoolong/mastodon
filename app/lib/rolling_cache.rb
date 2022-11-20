@@ -81,6 +81,11 @@ class RollingCache
     load(records[0][1])
   end
 
+  def trim(expiration)
+    # Redis-rb has no support for MINID eviction strategy yet...
+    @redis.call('XTRIM', @key, 'MINID', '~', Time.now.utc.to_i - expiration.to_i)
+  end
+
   # Dump an object into a Hash.
   #
   # For ActiveRecord objects, a list of symbols is
