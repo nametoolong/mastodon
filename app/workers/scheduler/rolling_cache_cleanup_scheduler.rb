@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Scheduler:RollingCacheCleanupScheduler
+class Scheduler::RollingCacheCleanupScheduler
   include Sidekiq::Worker
 
   CACHE_EXPIRATION_TIME = 5.minutes
