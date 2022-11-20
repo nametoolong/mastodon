@@ -28,20 +28,26 @@ class InitialStateSerializer < Blueprinter::Base
 
     if object[:current_account]
       current_account = object[:current_account]
-      store[:me]                = current_account.id.to_s
-      store[:unfollow_modal]    = current_account.user.setting_unfollow_modal
-      store[:boost_modal]       = current_account.user.setting_boost_modal
-      store[:delete_modal]      = current_account.user.setting_delete_modal
-      store[:auto_play_gif]     = current_account.user.setting_auto_play_gif
-      store[:display_media]     = current_account.user.setting_display_media
-      store[:expand_spoilers]   = current_account.user.setting_expand_spoilers
-      store[:reduce_motion]     = current_account.user.setting_reduce_motion
-      store[:disable_swiping]   = current_account.user.setting_disable_swiping
-      store[:advanced_layout]   = current_account.user.setting_advanced_layout
-      store[:use_blurhash]      = current_account.user.setting_use_blurhash
-      store[:use_pending_items] = current_account.user.setting_use_pending_items
-      store[:trends]            = Setting.trends && current_account.user.setting_trends
-      store[:crop_images]       = current_account.user.setting_crop_images
+      user_settings = current_account.user.settings.get_multi(%w(
+        unfollow_modal
+        boost_modal
+        delete_modal
+        auto_play_gif
+        display_media
+        expand_spoilers
+        reduce_motion
+        disable_swiping
+        advanced_layout
+        use_blurhash
+        use_pending_items
+        trends
+        crop_images
+      )).symbolize_keys
+
+      store.merge!(user_settings)
+
+      store[:me] = current_account.id.to_s
+      store[:trends] &&= Setting.trends
     else
       store[:auto_play_gif] = Setting.auto_play_gif
       store[:display_media] = Setting.display_media

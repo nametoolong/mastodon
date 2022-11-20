@@ -61,6 +61,34 @@ module Settings
       end
     end
 
+    def get_multi(keys)
+      cache_keys = keys.to_h { |key| [Setting.cache_key(key, @object), key] }
+      hits = Rails.cache.read_multi(*cache_keys.keys)
+      to_write = {}
+
+      cache_keys.each do |cache_key, key|
+        unless hits.include?(cache_key)
+          db_val = thing_scoped.find_by(var: key.to_s)
+          default_value = ScopedSettings.default_settings[key]
+
+          hits[cache_key] = begin
+            if not db_val
+              default_value
+            elsif default_value.is_a?(Hash)
+              default_value.with_indifferent_access.merge!(db_val.value)
+            else
+              to_write[cache_key] = db_val.value
+              db_val.value
+            end
+          end
+        end
+      end
+
+      Rails.cache.write_multi(to_write)
+
+      hits.transform_keys! { |cache_key| cache_keys[cache_key] }
+    end
+
     class << self
       def default_settings
         defaulting = DEFAULTING_TO_UNSCOPED.index_with { |k| Setting[k] }
