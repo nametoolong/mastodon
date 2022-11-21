@@ -88,7 +88,7 @@ class FanOutOnWriteService < BaseService
       @status.reblogged_by_accounts.merge(Account.local).includes(:user),
       first_batch: ->(records, context) {
         cache_ids = @cache.push_multi(records, :id, :username, :domain, :note, :display_name, :user, :fields, :suspended_at)
-        context[:status] = @cache.push(@status, :id)
+        context[:status] = @cache.push(@status, :id, :account_id)
         records.zip(cache_ids).map! do |account, cache_id|
           [account.id, @status_id, 'Status', 'update', {
             'activity_cache_id' => context[:status],
