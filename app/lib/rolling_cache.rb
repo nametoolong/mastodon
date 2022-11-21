@@ -83,7 +83,7 @@ class RollingCache
 
   def trim(expiration)
     # Redis-rb has no support for MINID eviction strategy yet...
-    @redis.call('XTRIM', @key, 'MINID', '~', Time.now.utc.to_i - expiration.to_i)
+    @redis.call('XTRIM', @key, 'MINID', '~', 1000 * (Time.now.utc.to_i - expiration.to_i))
   end
 
   # Dump an object into a Hash.
