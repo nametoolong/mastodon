@@ -14,7 +14,7 @@ class Api::V1::TagsController < Api::BaseController
   end
 
   def follow
-    TagFollow.first_or_create!(tag: @tag, account: current_account, rate_limit: true)
+    TagFollow.create_with(rate_limit: true).find_or_create_by!(tag: @tag, account: current_account)
     render json: render_blueprint_with_account(REST::TagSerializer, @tag)
   end
 
