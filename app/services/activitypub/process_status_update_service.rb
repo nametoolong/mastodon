@@ -178,7 +178,7 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   end
 
   def update_mentions!
-    mention_attributes = [:id, :account_id, :status_id]
+    mention_attributes = [:id, :account_id]
     previous_mentions = @status.active_mentions.pluck(*mention_attributes).map! do |item|
       mention_attributes.zip(item).to_h
     end

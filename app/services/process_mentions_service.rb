@@ -12,7 +12,7 @@ class ProcessMentionsService < BaseService
 
     return unless @status.local?
 
-    mention_attributes = [:id, :account_id, :status_id]
+    mention_attributes = [:id, :account_id]
     @previous_mentions = @status.active_mentions.pluck(*mention_attributes).map! do |item|
       mention_attributes.zip(item).to_h
     end
@@ -76,6 +76,8 @@ class ProcessMentionsService < BaseService
       return
     end
 
+    @current_mentions.uniq!
+
     # Make sure we never mention blocked accounts
     unless @current_mentions.empty?
       mentioned_account_ids    = @current_mentions.map { |x| x[:account_id] }
@@ -90,8 +92,6 @@ class ProcessMentionsService < BaseService
 
       @current_mentions.reject! { |x| blocked_account_ids.include?(x[:account_id]) }
     end
-
-    @current_mentions.uniq!
 
     default_attributes = {
       status_id: @status.id,
