@@ -125,7 +125,7 @@ GEM
       ffi (~> 1.14)
     bootsnap (1.14.0)
       msgpack (~> 1.2)
-    brakeman (5.3.1)
+    brakeman (5.4.0)
     browser (4.2.0)
     brpoplpush-redis_script (0.1.2)
       concurrent-ruby (~> 1.0, >= 1.0.5)
@@ -743,7 +743,7 @@ DEPENDENCIES
   blueprinter (~> 0.25.3)
   blurhash (~> 0.1)
   bootsnap (~> 1.14.0)
-  brakeman (~> 5.3)
+  brakeman (~> 5.4)
   browser
   bson (~> 4.15.0)
   bullet (~> 7.0)
