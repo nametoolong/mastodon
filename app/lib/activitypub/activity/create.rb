@@ -156,7 +156,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
       # mentions, which take precedence
       next if @mentions.any? { |mention| mention[:account_id] == account.id }
 
-      @mentions << {account_id: account.id, silent: true}
+      @mentions << { account_id: account.id, silent: true }
 
       # If there is at least one silent mention, then the status can be considered
       # as a limited-audience status, and not strictly a direct message, but only
@@ -195,11 +195,14 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     # not a big deal
     Trends.tags.register(status)
 
+    @mentions.uniq!
+
     default_attributes = {
       status_id: @status.id,
       created_at: Time.now.utc,
       updated_at: Time.now.utc
     }
+
     @mentions.map! { |item| item.merge!(default_attributes) }
 
     unless @mentions.empty?
@@ -242,7 +245,7 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
 
     return if account.nil?
 
-    @mentions << {account_id: account.id, silent: false}
+    @mentions << { account_id: account.id, silent: false }
   end
 
   def process_emoji(tag)
