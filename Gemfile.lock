@@ -123,7 +123,7 @@ GEM
     blueprinter (0.25.3)
     blurhash (0.1.6)
       ffi (~> 1.14)
-    bootsnap (1.14.0)
+    bootsnap (1.15.0)
       msgpack (~> 1.2)
     brakeman (5.4.0)
     browser (4.2.0)
@@ -748,7 +748,7 @@ DEPENDENCIES
   binding_of_caller (~> 1.0)
   blueprinter (~> 0.25.3)
   blurhash (~> 0.1)
-  bootsnap (~> 1.14.0)
+  bootsnap (~> 1.15.0)
   brakeman (~> 5.4)
   browser
   bson (~> 4.15.0)
