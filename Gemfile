@@ -25,8 +25,8 @@ gem 'kt-paperclip', '~> 7.1'
 gem 'blurhash', '~> 0.1'
 
 gem 'active_model_serializers', '~> 0.10'
-gem 'blueprinter', '~> 0.25.3'
 gem 'addressable', '~> 2.8'
+gem 'blueprinter-rb', '~> 1.0.0', require: 'blueprinter'
 gem 'bootsnap', '~> 1.15.0', require: false
 gem 'browser'
 gem 'charlock_holmes', '~> 0.7.7'
