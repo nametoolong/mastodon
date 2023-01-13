@@ -1,5 +1,4 @@
 @import 'mastodon/variables';
-@import 'fonts/roboto';
 
 table,
 td,
@@ -177,10 +176,6 @@ body {
 .column-cell td,
 p {
   font-family: Helvetica, Arial, sans-serif;
-
-  @media only screen {
-    font-family: $font-sans-serif, sans-serif !important;
-  }
 }
 
 .email-body .column-cell,
