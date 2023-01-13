@@ -60,19 +60,19 @@ class REST::AccountSerializer < Blueprinter::Base
     full_asset_url(object.suspended? ? object.header.default_url : object.header_static_url)
   end
 
-  field :suspended, if: -> (_name, object, options) {
+  field :suspended, if: ->(_name, object, options) {
     object.suspended?
   } do |object|
     object.suspended?
   end
 
-  field :limited, if: -> (_name, object, options) {
+  field :limited, if: ->(_name, object, options) {
     object.silenced?
   } do |object|
     object.silenced?
   end
 
-  field :noindex, if: -> (_name, object, options) {
+  field :noindex, if: ->(_name, object, options) {
     object.local?
   } do |object|
     object.user_prefers_noindex?
@@ -92,7 +92,7 @@ class REST::AccountSerializer < Blueprinter::Base
     end
   end
 
-  association :moved, blueprint: REST::AccountSerializer, if: -> (_name, object, options) {
+  association :moved, blueprint: REST::AccountSerializer, if: ->(_name, object, options) {
     object.moved? && object.moved_to_account.moved_to_account_id.nil?
   } do |object|
     object.suspended? ? nil : object.moved_to_account

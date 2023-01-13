@@ -9,7 +9,7 @@ class REST::StatusEditSerializer < Blueprinter::Base
     status_content_format(object)
   end
 
-  field :poll, if: -> (_name, object, options) {
+  field :poll, if: ->(_name, object, options) {
     object.poll_options.present?
   } do |object|
     { options: object.poll_options.map { |title| { title: title } } }

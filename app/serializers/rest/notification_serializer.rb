@@ -13,11 +13,11 @@ class REST::NotificationSerializer < Blueprinter::Base
   end
 
   view :logged_in do
-    association :target_status, name: :status, if: -> (_name, object, options) {
+    association :target_status, name: :status, if: ->(_name, object, options) {
       [:favourite, :reblog, :status, :mention, :poll, :update].include?(object.type)
     }, blueprint: REST::StatusSerializer, view: :logged_in
 
-    association :report, if: -> (_name, object, options) {
+    association :report, if: ->(_name, object, options) {
       object.type == :'admin.report'
     }, blueprint: REST::ReportSerializer
   end
