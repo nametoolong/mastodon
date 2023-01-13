@@ -137,7 +137,13 @@ class Premailer
           style_tag = ::Nokolexbor::Node.new("style", doc)
           style_tag.content = styles
 
-          (doc.at_css('head') || doc.root || doc).prepend_child(style_tag)
+          head = doc.at_css('head')
+
+          if head
+            head.add_child(style_tag)
+          else
+            (doc.root || doc).prepend_child(style_tag)
+          end
         end
 
         doc
