@@ -25,32 +25,42 @@ class Premailer
         end
 
         # Iterate through the rules and merge them into the HTML
-        @css_parser.each_selector(:all) do |selector, declaration, specificity, media_types|
-          # Save un-mergable rules separately
-          selector.gsub!(/:link([\s]*)+/i) { |m| $1 }
+        @css_parser.each_rule_set(:all) do |rule_set, media_types|
+          declaration = declarations_to_s(rule_set)
 
-          # Convert element names to lower case
-          selector.gsub!(/([\s]|^)([\w]+)/) { |m| $1.to_s + $2.to_s.downcase }
+          if Premailer.is_media_query?(media_types)
+            @unmergable_rules.add_rule_set!(CssParser::RuleSet.new(rule_set.selectors.join(','), declaration), media_types)
+            next
+          end
 
-          if Premailer.is_media_query?(media_types) || selector =~ Premailer::RE_UNMERGABLE_SELECTORS
-            @unmergable_rules.add_rule_set!(CssParser::RuleSet.new(selector, declaration), media_types) unless @options[:preserve_styles]
-          else
+          rule_set.selectors.each do |selector|
+            if selector =~ Premailer::RE_UNMERGABLE_SELECTORS
+              @unmergable_rules.add_rule_set!(CssParser::RuleSet.new(selector, declaration))
+              next
+            end
+
+            # Save un-mergable rules separately
+            selector.gsub!(/:link([\s]*)+/i) { |m| $1 }
+
+            # Convert element names to lower case
+            selector.gsub!(/([\s]|^)([\w]+)/) { |m| $1.to_s + $2.to_s.downcase }
+
+            specificity = rule_set.specificity || CssParser.calculate_specificity(selector)
+
+            if @options[:preserve_reset] && selector =~ Premailer::RE_RESET_SELECTORS
+              # This is in place to preserve the MailChimp CSS reset: http://github.com/mailchimp/Email-Blueprints/
+              @unmergable_rules.add_rule_set!(CssParser::RuleSet.new(selector, declaration))
+            end
+
+            # Change single ID CSS selectors into xpath so that we can match more
+            # than one element.  Added to work around dodgy generated code.
+            selector.gsub!(/\A\#([\w_\-]+)\Z/, '[id=\1]')
+
             begin
-              if selector =~ Premailer::RE_RESET_SELECTORS
-                # this is in place to preserve the MailChimp CSS reset: http://github.com/mailchimp/Email-Blueprints/
-                # however, this doesn't mean for testing pur
-                @unmergable_rules.add_rule_set!(CssParser::RuleSet.new(selector, declaration)) unless !@options[:preserve_reset]
-              end
-
-              # Change single ID CSS selectors into xpath so that we can match more
-              # than one element.  Added to work around dodgy generated code.
-              selector.gsub!(/\A\#([\w_\-]+)\Z/, '[id=\1]')
-
               doc.css(selector).each do |el|
-                if el.element? and (el.name != 'head' and el.parent.name != 'head')
+                if el.element? && el.name != 'head' && el.parent.name != 'head'
                   # Add a style attribute or append to the existing one
-                  block = "[SPEC=#{specificity}[#{declaration}]]"
-                  el['style'] = (el['style'] || '') + ' ' + block
+                  el['style'] = (el['style'] || '') + " [SPEC=#{specificity}[#{declaration}]]"
                 end
               end
             rescue ::Nokolexbor::LexborError, RuntimeError, ArgumentError
@@ -66,14 +76,15 @@ class Premailer
         # Read STYLE attributes and perform folding
         doc.css("[style]").each do |el|
           declarations = []
-          el['style'].scan(/\[SPEC\=([\d]+)\[(.[^\]\]]*)\]\]/).each do |declaration|
+
+          el['style'].scan(/\[SPEC\=([\d]+)\[(.[^\]\]]*)\]\]/) do |declaration|
             declarations << CssParser::RuleSet.new(nil, declaration[1].to_s, declaration[0].to_i)
           rescue ArgumentError
             raise if @options[:rule_set_exceptions]
           end
 
           # write the inline STYLE attribute
-          el['style'] = CssParser.merge(declarations).declarations_to_s
+          el['style'] = declarations_to_s(CssParser.merge(declarations))
         end
 
         doc = write_unmergable_css_rules(doc, @unmergable_rules) unless @options[:drop_unmergeable_css_rules]
@@ -131,7 +142,7 @@ class Premailer
       #
       # @return [::Nokolexbor::Document] a document.
       def write_unmergable_css_rules(doc, unmergable_rules)
-        styles = unmergable_rules.to_s
+        styles = parser_to_s(unmergable_rules)
 
         unless styles.empty?
           style_tag = ::Nokolexbor::Node.new("style", doc)
@@ -155,8 +166,8 @@ class Premailer
       #
       # @return [String] a plain text.
       def to_plain_text
-        html_src = @doc.at_css("body").inner_html
-        html_src = @doc.to_html if html_src.nil? or html_src.empty?
+        html_src = @doc.at_css("body")&.inner_html
+        html_src = @doc.to_html if html_src.nil? || html_src.empty?
         convert_to_text(html_src, @options[:line_length], @html_encoding)
       end
 
@@ -195,6 +206,42 @@ class Premailer
         end
 
         ::Nokolexbor::HTML(thing)
+      end
+
+      private
+
+      def declarations_to_s(rule_set)
+        out = []
+
+        rule_set.each_declaration do |prop, value, important|
+          importance = important ? ' !important' : ''
+          out << "#{prop}:#{value}#{importance};"
+        end
+
+        out.join
+      end
+
+      def ruleset_to_s(rule_set)
+        "#{rule_set.selectors.join(',')}{#{declarations_to_s(rule_set)}}"
+      end
+
+      def parser_to_s(parser)
+        out = []
+
+        parser.each_rule_set(:all) do |rule_set, media_types|
+          media_block = !media_types.include?(:all)
+          rules = ruleset_to_s(rule_set)
+
+          if media_block
+            media_types.each do |media_type|
+              out << "@media #{media_type}{#{rules}}"
+            end
+          else
+            out << rules
+          end
+        end
+
+        out.join
       end
     end
   end

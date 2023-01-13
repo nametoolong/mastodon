@@ -1,6 +1,6 @@
 module PremailerLexborPatch
   def load_css_from_html!
-    tags = @doc.css("link[rel=stylesheet]:not([data-premailer=ignore]), style:not([data-premailer=ignore])")
+    tags = @doc.css("style:not([data-premailer=ignore])")
 
     if @options[:include_style_tags]
       tags.each do |tag|
@@ -15,11 +15,7 @@ module PremailerLexborPatch
     base_uri = Addressable::URI.parse(base_uri) unless base_uri.kind_of?(Addressable::URI)
 
     ['href', 'src', 'background'].each do |attribute|
-      tags = doc.css("[#{attribute}]")
-
-      next if tags.empty?
-
-      tags.each do |tag|
+      doc.css("[#{attribute}]").each do |tag|
         link = tag[attribute]
 
         # skip links that look like they have merge tags

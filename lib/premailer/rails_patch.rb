@@ -1,9 +1,9 @@
 module CSSHelperLexborPatch
   def css_urls_in_doc(doc)
-    doc.css('link[rel=stylesheet]:not([data-premailer=ignore])').map do |link|
-      link.remove
-      link['href'].to_s
-    end
+    tags = doc.css('link[rel=stylesheet]:not([data-premailer=ignore])')
+    urls = tags.map { |link| link['href'] }
+    tags.remove
+    urls
   end
 end
 
