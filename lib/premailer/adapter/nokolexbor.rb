@@ -75,16 +75,28 @@ class Premailer
 
         # Read STYLE attributes and perform folding
         doc.css("[style]").each do |el|
-          declarations = []
-
-          el['style'].scan(/\[SPEC\=([\d]+)\[(.[^\]\]]*)\]\]/) do |declaration|
-            declarations << CssParser::RuleSet.new(nil, declaration[1].to_s, declaration[0].to_i)
-          rescue ArgumentError
-            raise if @options[:rule_set_exceptions]
+          declarations = el['style'].scan(/\[SPEC\=([\d]+)\[(.[^\]\]]*)\]\]/).map! do |declaration|
+            [declaration[1].to_s, declaration[0].to_i]
           end
 
-          # write the inline STYLE attribute
-          el['style'] = declarations_to_s(CssParser.merge(declarations))
+          el['style'] = begin
+            case declarations.length
+            when 0
+              ''
+            when 1
+              declarations[0][0]
+            else
+              declarations.map! do |declaration|
+                CssParser::RuleSet.new(nil, *declaration)
+              rescue ArgumentError
+                raise if @options[:rule_set_exceptions]
+              end
+
+              declarations.compact!
+
+              declarations_to_s(CssParser.merge(declarations))
+            end
+          end
         end
 
         doc = write_unmergable_css_rules(doc, @unmergable_rules) unless @options[:drop_unmergeable_css_rules]
