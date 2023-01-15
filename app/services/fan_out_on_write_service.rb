@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class FanOutOnWriteService < BaseService
+  include BatchWorkerConcern
   include Redisable
 
   # Push a status into home and mentions feeds
@@ -85,9 +86,9 @@ class FanOutOnWriteService < BaseService
   def notify_about_update!
     push_in_batches(
       LocalNotificationWorker,
-      @status.reblogged_by_accounts.merge(Account.local).includes(:user),
+      @status.reblogged_by_accounts.merge(Account.local).select(*ACCOUNT_NOTIFY_FIELDS).includes(:user),
       first_batch: ->(records, context) {
-        cache_ids = @cache.push_multi(records, :id, :username, :domain, :note, :display_name, :user, :fields, :suspended_at)
+        cache_ids = @cache.push_multi(records, *ACCOUNT_NOTIFY_ATTRIBUTES)
         context[:status] = @cache.push(@status, :id, :account_id)
         records.zip(cache_ids).map! do |account, cache_id|
           [account.id, @status_id, 'Status', 'update', {
@@ -112,7 +113,7 @@ class FanOutOnWriteService < BaseService
       @account.followers_for_local_distribution.select(:id),
       first_batch: ->(records, context) {
         cache_ids = @cache.push_multi(records, :id)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
+        context[:status] = @cache.push(@status, *STATUS_FEED_ATTRIBUTES)
         records.zip(cache_ids).map! do |follower, cache_id|
           [@status_id, follower.id, 'home', {
             'update' => update?,
@@ -145,7 +146,7 @@ class FanOutOnWriteService < BaseService
           }
         end
         cache_ids = @cache.push_direct_multi(cache_entries)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
+        context[:status] = @cache.push(@status, *STATUS_FEED_ATTRIBUTES)
         records.zip(cache_ids).map! do |follow, cache_id|
           [@status_id, follow.account_id, 'tags', {
             'update' => update?,
@@ -179,7 +180,7 @@ class FanOutOnWriteService < BaseService
           }
         end
         owner_cache_ids = @cache.push_direct_multi(owner_cache_entries)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
+        context[:status] = @cache.push(@status, *STATUS_FEED_ATTRIBUTES)
         records.zip(list_cache_ids, owner_cache_ids).map! do |list, list_cache_id, owner_cache_id|
           [@status_id, list.id, 'list', {
             'update' => update?,
@@ -213,7 +214,7 @@ class FanOutOnWriteService < BaseService
           }
         end
         cache_ids = @cache.push_direct_multi(cache_entries)
-        context[:status] = @cache.push(@status, :id, :in_reply_to_id, :reblog_of_id, :reply, :language, :account_id, :in_reply_to_account_id)
+        context[:status] = @cache.push(@status, *STATUS_FEED_ATTRIBUTES)
         records.zip(cache_ids).map! do |mention, cache_id|
           [@status_id, mention.account_id, 'home', {
             'update' => update?,
@@ -277,14 +278,5 @@ class FanOutOnWriteService < BaseService
 
   def broadcastable?
     @status.public_visibility? && !@status.reblog? && !@account.silenced?
-  end
-
-  def push_in_batches(klass, query, first_batch:, remaining_batches:)
-    context = {}
-
-    query.reorder(nil).find_in_batches.with_index do |records, batch|
-      jobs = (batch == 0 ? first_batch : remaining_batches).call(records, context)
-      klass.perform_bulk(jobs)
-    end
   end
 end
