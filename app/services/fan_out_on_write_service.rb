@@ -86,7 +86,7 @@ class FanOutOnWriteService < BaseService
   def notify_about_update!
     push_in_batches(
       LocalNotificationWorker,
-      @status.reblogged_by_accounts.merge(Account.local).select(*ACCOUNT_NOTIFY_FIELDS).includes(:user),
+      @status.reblogged_by_accounts.merge(Account.local).select(ACCOUNT_NOTIFY_FIELDS).includes(:user),
       first_batch: ->(records, context) {
         cache_ids = @cache.push_multi(records, *ACCOUNT_NOTIFY_ATTRIBUTES)
         context[:status] = @cache.push(@status, :id, :account_id)

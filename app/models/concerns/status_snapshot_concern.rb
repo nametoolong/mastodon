@@ -11,11 +11,8 @@ module StatusSnapshotConcern
     edited_at.present?
   end
 
-  def build_snapshot(account_id: nil, at_time: nil, rate_limit: true)
-    # We don't use `edits#new` here to avoid it having saved when the
-    # status is saved, since we want to control that manually
-
-    StatusEdit.new(
+  def prepare_snapshot_data(account_id: nil, at_time: nil)
+    {
       status_id: id,
       text: text,
       spoiler_text: spoiler_text,
@@ -24,12 +21,19 @@ module StatusSnapshotConcern
       media_descriptions: ordered_media_attachments.map(&:description),
       poll_options: preloadable_poll&.options&.dup,
       account_id: account_id || self.account_id,
-      created_at: at_time || edited_at,
-      rate_limit: rate_limit
-    )
+      created_at: at_time || edited_at
+    }
   end
 
-  def snapshot!(**options)
-    build_snapshot(**options).save!
+  def snapshot!(account_id: nil, at_time: nil, rate_limit: true)
+    snapshot_data = prepare_snapshot_data(account_id: account_id, at_time: at_time)
+
+    if rate_limit
+      snapshot_data.merge!(rate_limit: true)
+      StatusEdit.create!(snapshot_data)
+    else
+      snapshot_data.merge!(updated_at: Time.now.utc)
+      StatusEdit.insert!(snapshot_data, returning: false)
+    end
   end
 end

@@ -270,13 +270,17 @@ class ActivityPub::ProcessStatusUpdateService < BaseService
   end
 
   def record_previous_edit!
-    @previous_edit = @status.build_snapshot(at_time: @status.created_at, rate_limit: false) if @status.edits.empty?
+    @previous_edit_data = @status.prepare_snapshot_data(at_time: @status.created_at) if @status.edits.empty?
   end
 
   def create_edits!
     return unless significant_changes?
 
-    @previous_edit&.save!
+    if @previous_edit_data
+      @previous_edit_data.merge!(updated_at: Time.now.utc)
+      StatusEdit.insert!(@previous_edit_data, returning: false)
+    end
+
     @status.snapshot!(account_id: @account.id, rate_limit: false)
   end
 

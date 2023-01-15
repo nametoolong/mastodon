@@ -48,7 +48,7 @@ class PollExpirationNotifyWorker
   def notify_local_voters!
     push_in_batches(
       LocalNotificationWorker,
-      @poll.voters.merge(Account.local).select(*ACCOUNT_NOTIFY_FIELDS).includes(:user),
+      @poll.voters.merge(Account.local).select(ACCOUNT_NOTIFY_FIELDS).includes(:user),
       first_batch: ->(records, context) {
         cache_ids = @cache.push_multi(records, *ACCOUNT_NOTIFY_ATTRIBUTES)
         context[:poll] = @cache.push(@poll, :id, :account_id)
