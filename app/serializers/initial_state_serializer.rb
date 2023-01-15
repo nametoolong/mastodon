@@ -42,7 +42,7 @@ class InitialStateSerializer < Blueprinter::Base
         use_pending_items
         trends
         crop_images
-      )).symbolize_keys
+      )).symbolize_keys!
 
       store.merge!(user_settings)
 

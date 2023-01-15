@@ -74,8 +74,12 @@ class REST::AccountSerializer < Blueprinter::Base
 
   field :noindex, if: ->(_name, object, options) {
     object.local?
-  } do |object|
-    object.user_prefers_noindex?
+  } do |object, options|
+    if options[:settings]
+      options[:settings][:noindex]
+    else
+      object.user_prefers_noindex?
+    end
   end
 
   field :fields do |object|

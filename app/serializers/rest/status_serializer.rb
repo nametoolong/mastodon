@@ -76,7 +76,11 @@ class REST::StatusSerializer < Blueprinter::Base
     end
 
     association :application, if: ->(_name, object, options) {
-      object.account.user_shows_application?
+      if options[:settings]
+        options[:settings][:show_application]
+      else
+        object.account.user_shows_application?
+      end
     }, blueprint: REST::ApplicationSerializer, view: :public
 
     association :reblog, blueprint: REST::StatusSerializer, view: :guest

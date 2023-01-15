@@ -63,36 +63,41 @@ module Settings
 
     def get_multi(keys)
       cache_keys = keys.to_h { |key| [Setting.cache_key(key, @object), key] }
-      hits = Rails.cache.read_multi(*cache_keys.keys)
-      to_write = {}
+      hits = Rails.cache.read_multi(*cache_keys.keys).transform_keys! { |key| cache_keys[key] }
+      to_fetch = keys - hits.keys
 
-      cache_keys.each do |cache_key, key|
-        unless hits.include?(cache_key)
-          db_val = thing_scoped.find_by(var: key.to_s)
+      if to_fetch
+        db_values = thing_scoped.where(var: to_fetch).select(:var, :value).index_by(&:var)
+        missing_keys = to_fetch - db_values.keys
+
+        fetched_values = missing_keys.to_h { |key| [key, ScopedSettings.default_settings[key]] }
+
+        db_values.each do |key, db_val|
           default_value = ScopedSettings.default_settings[key]
 
-          hits[cache_key] = begin
-            if not db_val
-              default_value
-            elsif default_value.is_a?(Hash)
+          fetched_values[key] = begin
+            if default_value.is_a?(Hash)
               default_value.with_indifferent_access.merge!(db_val.value)
             else
-              to_write[cache_key] = db_val.value
               db_val.value
             end
           end
         end
+
+        hits.merge!(fetched_values)
+
+        fetched_values.reject! { |key, value| value.is_a?(Hash) }
+        fetched_values.transform_keys! { |key| Setting.cache_key(key, @object) }
+
+        Rails.cache.write_multi(fetched_values) unless fetched_values.empty?
       end
 
-      Rails.cache.write_multi(to_write)
-
-      hits.transform_keys! { |cache_key| cache_keys[cache_key] }
+      hits
     end
 
     class << self
       def default_settings
-        defaulting = DEFAULTING_TO_UNSCOPED.index_with { |k| Setting[k] }
-        Setting.default_settings.merge!(defaulting)
+        Setting.default_settings.merge!(Setting.get_multi(DEFAULTING_TO_UNSCOPED))
       end
     end
 
