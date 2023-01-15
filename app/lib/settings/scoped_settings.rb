@@ -2,11 +2,6 @@
 
 module Settings
   class ScopedSettings
-    DEFAULTING_TO_UNSCOPED = %w(
-      theme
-      noindex
-    ).freeze
-
     def initialize(object)
       @object = object
     end
@@ -52,11 +47,11 @@ module Settings
       Rails.cache.fetch(Setting.cache_key(key, @object)) do
         db_val = thing_scoped.find_by(var: key.to_s)
         if db_val
-          default_value = ScopedSettings.default_settings[key]
+          default_value = DefaultSettings[key]
           return default_value.with_indifferent_access.merge!(db_val.value) if default_value.is_a?(Hash)
           db_val.value
         else
-          ScopedSettings.default_settings[key]
+          DefaultSettings[key]
         end
       end
     end
@@ -69,11 +64,12 @@ module Settings
       if to_fetch
         db_values = thing_scoped.where(var: to_fetch).select(:var, :value).index_by(&:var)
         missing_keys = to_fetch - db_values.keys
+        default_values = DefaultSettings.get_multi(to_fetch)
 
-        fetched_values = missing_keys.to_h { |key| [key, ScopedSettings.default_settings[key]] }
+        fetched_values = missing_keys.to_h { |key| [key, default_values[key]] }
 
         db_values.each do |key, db_val|
-          default_value = ScopedSettings.default_settings[key]
+          default_value = default_values[key]
 
           fetched_values[key] = begin
             if default_value.is_a?(Hash)
@@ -86,7 +82,6 @@ module Settings
 
         hits.merge!(fetched_values)
 
-        fetched_values.reject! { |key, value| value.is_a?(Hash) }
         fetched_values.transform_keys! { |key| Setting.cache_key(key, @object) }
 
         Rails.cache.write_multi(fetched_values) unless fetched_values.empty?
@@ -95,9 +90,26 @@ module Settings
       hits
     end
 
-    class << self
-      def default_settings
-        Setting.default_settings.merge!(Setting.get_multi(DEFAULTING_TO_UNSCOPED))
+    module DefaultSettings
+      DEFAULTING_TO_UNSCOPED = %w(
+        theme
+        noindex
+      ).freeze
+
+      class << self
+        def [](key)
+          if DEFAULTING_TO_UNSCOPED.include?(key)
+            Setting[key]
+          else
+            Setting.default_settings[key]
+          end
+        end
+
+        def get_multi(keys)
+          unscoped_keys = keys & DEFAULTING_TO_UNSCOPED
+          Setting.default_settings.merge!(Setting.get_multi(unscoped_keys)) unless unscoped_keys.empty?
+          Setting.default_settings
+        end
       end
     end
 

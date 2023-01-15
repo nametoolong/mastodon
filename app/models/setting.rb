@@ -43,26 +43,30 @@ class Setting < RailsSettings::Base
 
       cache_keys = keys.to_h { |key| [Setting.cache_key(key, nil), key] }
       hits = Rails.cache.read_multi(*cache_keys.keys)
-      to_write = {}
+      default_values = default_settings
+
+      fetched_values = {}
 
       cache_keys.each do |cache_key, key|
-        unless hits.include?(cache_key)
-          db_val = object(key)
-          default_value = default_settings[key]
+        next if hits.include?(cache_key)
 
-          if not db_val
-            to_write[cache_key] = default_value
+        db_val = object(key)
+        default_value = default_values[key]
+
+        fetched_values[cache_key] = begin
+          if db_val.nil?
+            default_value
           elsif default_value.is_a?(Hash)
-            hits[cache_key] = default_value.with_indifferent_access.merge!(db_val.value)
+            default_value.with_indifferent_access.merge!(db_val.value)
           else
-            to_write[cache_key] = db_val.value
+            db_val.value
           end
         end
       end
 
-      hits.merge!(to_write)
+      hits.merge!(fetched_values)
 
-      Rails.cache.write_multi(to_write)
+      Rails.cache.write_multi(fetched_values)
 
       hits.transform_keys! { |cache_key| cache_keys[cache_key] }
     end
