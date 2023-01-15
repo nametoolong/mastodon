@@ -42,8 +42,6 @@ module InlineRenderer
 
   def self.preload_associations_for_status(object)
     ActiveRecord::Associations::Preloader.new.preload(object, [
-      :media_attachments,
-      :preview_cards,
       :status_stat,
       :tags,
       account: [
