@@ -1,39 +1,39 @@
 # frozen_string_literal: true
 
-class InstancePresenter < ActiveModelSerializers::Model
-  attributes :domain, :title, :version, :source_url,
-             :description, :languages, :rules, :contact
+class InstancePresenter
+  include ActiveModel::Model
+  include ActiveModel::Serialization
 
-  class ContactPresenter
-    def email
-      Setting.site_contact_email
-    end
-
-    def account
-      username, domain = Setting.site_contact_username.strip.gsub(/\A@/, '').split('@', 2)
-      domain = nil if TagManager.instance.local_domain?(domain)
-      Account.find_remote(username, domain) if username.present?
-    end
-  end
+  ContactPresenter = Struct.new(:email, :account)
 
   def contact
-    ContactPresenter.new
+    @contact ||= begin
+      username, domain = site_settings[:site_contact_username].strip.gsub(/\A@/, '').split('@', 2)
+      domain = nil if TagManager.instance.local_domain?(domain)
+      account = Account.find_remote(username, domain) if username.present?
+
+      ContactPresenter.new(site_settings[:site_contact_email], account)
+    end
   end
 
   def closed_registrations_message
-    Setting.closed_registrations_message
+    site_settings[:closed_registrations_message]
+  end
+
+  def registrations_mode
+    site_settings[:registrations_mode]
   end
 
   def description
-    Setting.site_short_description
+    site_settings[:site_short_description]
   end
 
   def extended_description
-    Setting.site_extended_description
+    site_settings[:site_extended_description]
   end
 
   def privacy_policy
-    Setting.site_terms
+    site_settings[:site_terms]
   end
 
   def domain
@@ -41,7 +41,7 @@ class InstancePresenter < ActiveModelSerializers::Model
   end
 
   def title
-    Setting.site_title
+    site_settings[:site_title]
   end
 
   def languages
@@ -82,5 +82,20 @@ class InstancePresenter < ActiveModelSerializers::Model
 
   def mascot
     @mascot ||= Rails.cache.fetch('site_uploads/mascot') { SiteUpload.find_by(var: 'mascot') }
+  end
+
+  private
+
+  def site_settings
+    @site_settings ||= Setting.get_multi(%w(
+      closed_registrations_message
+      registrations_mode
+      site_short_description
+      site_extended_description
+      site_terms
+      site_title
+      site_contact_email
+      site_contact_username
+    )).symbolize_keys!
   end
 end

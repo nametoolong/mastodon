@@ -4,6 +4,19 @@ class InitialStateSerializer < Blueprinter::Base
   field :meta do |object|
     instance_presenter = InstancePresenter.new
 
+    site_settings = Setting.get_multi(%w(
+      profile_directory
+      trends
+      registrations_mode
+      timeline_preview
+      activity_api_enabled
+      auto_play_gif
+      display_media
+      reduce_motion
+      use_blurhash
+      crop_images
+    )).symbolize_keys!
+
     store = {
       streaming_api_base_url: Rails.configuration.x.streaming_api_base_url,
       access_token: object[:token],
@@ -17,11 +30,11 @@ class InitialStateSerializer < Blueprinter::Base
       version: instance_presenter.version,
       limited_federation_mode: Rails.configuration.x.whitelist_mode,
       mascot: instance_presenter.mascot&.file&.url,
-      profile_directory: Setting.profile_directory,
-      trends: Setting.trends,
-      registrations_open: Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode,
-      timeline_preview: Setting.timeline_preview,
-      activity_api_enabled: Setting.activity_api_enabled,
+      profile_directory: site_settings[:profile_directory],
+      trends: site_settings[:trends],
+      registrations_open: site_settings[:registrations_mode] != 'none' && !Rails.configuration.x.single_user_mode,
+      timeline_preview: site_settings[:timeline_preview],
+      activity_api_enabled: site_settings[:activity_api_enabled],
       single_user_mode: Rails.configuration.x.single_user_mode,
       translation_enabled: TranslationService.configured?,
     }
@@ -47,13 +60,13 @@ class InitialStateSerializer < Blueprinter::Base
       store.merge!(user_settings)
 
       store[:me] = current_account.id.to_s
-      store[:trends] &&= Setting.trends
+      store[:trends] &&= site_settings[:trends]
     else
-      store[:auto_play_gif] = Setting.auto_play_gif
-      store[:display_media] = Setting.display_media
-      store[:reduce_motion] = Setting.reduce_motion
-      store[:use_blurhash]  = Setting.use_blurhash
-      store[:crop_images]   = Setting.crop_images
+      store[:auto_play_gif] = site_settings[:auto_play_gif]
+      store[:display_media] = site_settings[:display_media]
+      store[:reduce_motion] = site_settings[:reduce_motion]
+      store[:use_blurhash]  = site_settings[:use_blurhash]
+      store[:crop_images]   = site_settings[:crop_images]
     end
 
     store[:disabled_account_id] = object[:disabled_account].id.to_s if object[:disabled_account]

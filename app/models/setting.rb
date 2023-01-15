@@ -42,33 +42,36 @@ class Setting < RailsSettings::Base
       return keys.index_with { |k| Setting[k] } unless rails_initialized?
 
       cache_keys = keys.to_h { |key| [Setting.cache_key(key, nil), key] }
-      hits = Rails.cache.read_multi(*cache_keys.keys)
-      default_values = default_settings
+      hits = Rails.cache.read_multi(*cache_keys.keys).transform_keys! { |key| cache_keys[key] }
+      to_fetch = keys - hits.keys
 
-      fetched_values = {}
+      if to_fetch
+        db_values = thing_scoped.where(var: to_fetch).select(:var, :value).index_by(&:var)
+        missing_keys = to_fetch - db_values.keys
+        default_values = default_settings
 
-      cache_keys.each do |cache_key, key|
-        next if hits.include?(cache_key)
+        fetched_values = missing_keys.to_h { |key| [key, default_values[key]] }
 
-        db_val = object(key)
-        default_value = default_values[key]
+        db_values.each do |key, db_val|
+          default_value = default_values[key]
 
-        fetched_values[cache_key] = begin
-          if db_val.nil?
-            default_value
-          elsif default_value.is_a?(Hash)
-            default_value.with_indifferent_access.merge!(db_val.value)
-          else
-            db_val.value
+          fetched_values[key] = begin
+            if default_value.is_a?(Hash)
+              default_value.with_indifferent_access.merge!(db_val.value)
+            else
+              db_val.value
+            end
           end
         end
+
+        hits.merge!(fetched_values)
+
+        fetched_values.transform_keys! { |key| Setting.cache_key(key, nil) }
+
+        Rails.cache.write_multi(fetched_values) unless fetched_values.empty?
       end
 
-      hits.merge!(fetched_values)
-
-      Rails.cache.write_multi(fetched_values)
-
-      hits.transform_keys! { |cache_key| cache_keys[cache_key] }
+      hits
     end
 
     def all_as_records

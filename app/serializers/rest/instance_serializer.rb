@@ -81,7 +81,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
   def registrations
     {
       enabled: registrations_enabled?,
-      approval_required: Setting.registrations_mode == 'approved',
+      approval_required: object.registrations_mode == 'approved',
       message: registrations_enabled? ? nil : registrations_message,
     }
   end
@@ -93,12 +93,12 @@ class REST::InstanceSerializer < ActiveModel::Serializer
   private
 
   def registrations_enabled?
-    Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
+    object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 
   def registrations_message
-    if Setting.closed_registrations_message.present?
-      markdown.render(Setting.closed_registrations_message)
+    if object.closed_registrations_message.present?
+      markdown.render(object.closed_registrations_message)
     else
       nil
     end
