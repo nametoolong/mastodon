@@ -44,6 +44,7 @@ module InlineRenderer
     ActiveRecord::Associations::Preloader.new.preload(object, [
       :media_attachments,
       :preview_cards,
+      :status_stat,
       :tags,
       account: [
         :account_stat,
