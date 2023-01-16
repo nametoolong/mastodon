@@ -21,7 +21,7 @@ module Mastodon
     end
 
     def suffix
-      '/mastoduck'
+      '+nuage'
     end
 
     def to_a
@@ -33,7 +33,7 @@ module Mastodon
     end
 
     def repository
-      ENV.fetch('GITHUB_REPOSITORY', 'nametoolong/mastodon')
+      ENV.fetch('GITHUB_REPOSITORY', 'nametoolong/nuage')
     end
 
     def source_base_url

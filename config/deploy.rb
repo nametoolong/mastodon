@@ -2,7 +2,7 @@
 
 lock '3.17.1'
 
-set :repo_url, ENV.fetch('REPO', 'https://github.com/mastodon/mastodon.git')
+set :repo_url, ENV.fetch('REPO', 'https://github.com/nametoolong/nuage.git')
 set :branch, ENV.fetch('BRANCH', 'main')
 
 set :application, 'mastodon'
@@ -14,7 +14,7 @@ append :linked_files, '.env.production', 'public/robots.txt'
 append :linked_dirs, 'vendor/bundle', 'node_modules', 'public/system'
 
 namespace :systemd do
-  %i[sidekiq streaming web].each do |service|
+  %i[sidekiq web].each do |service|
     %i[reload restart status].each do |action|
       desc "Perform a #{action} on #{service} service"
       task "#{service}:#{action}".to_sym do
@@ -29,4 +29,3 @@ end
 
 after 'deploy:publishing', 'systemd:web:reload'
 after 'deploy:publishing', 'systemd:sidekiq:restart'
-after 'deploy:publishing', 'systemd:streaming:restart'
