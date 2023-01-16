@@ -7,7 +7,12 @@ module StaticRoutingHelper
     URI.join(asset_host, source).to_s
   end
 
-  URL_HELPER_METHODS = %i(tag_url medium_url media_proxy_url)
+  URL_HELPER_METHODS = %i(
+    medium_url
+    media_proxy_url
+    tag_url
+    short_account_tag_url
+  )
 
   URL_HELPER_METHODS.each do |name|
     define_method(name, ->(*args) { delegate_to_url_helper(name, args) })
