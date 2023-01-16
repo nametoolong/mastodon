@@ -14,6 +14,7 @@ module StaticRoutingHelper
   URL_HELPER_METHODS = %i(
     medium_url
     media_proxy_url
+    nodeinfo_schema_url
     tag_url
     short_account_tag_url
   )

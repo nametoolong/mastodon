@@ -1,49 +1,41 @@
 # frozen_string_literal: true
 
-class NodeInfo::Serializer < ActiveModel::Serializer
-  include RoutingHelper
-
-  attributes :version, :software, :protocols, :services, :usage, :open_registrations, :metadata
-
-  def version
+class NodeInfo::Serializer < Blueprinter::Base
+  field :version do
     '2.0'
   end
 
-  def software
+  field :software do
     { name: 'mastodon', version: Mastodon::Version.to_s }
   end
 
-  def services
+  field :services do
     { outbound: [], inbound: [] }
   end
 
-  def protocols
+  field :protocols do
     %w(activitypub)
   end
 
-  def usage
+  field :usage do |object|
     {
       users: {
-        total: instance_presenter.user_count,
-        active_month: instance_presenter.active_user_count(4),
-        active_halfyear: instance_presenter.active_user_count(24),
+        total: object.user_count,
+        active_month: object.active_user_count(4),
+        active_halfyear: object.active_user_count(24),
       },
 
-      local_posts: instance_presenter.status_count,
+      local_posts: object.status_count,
     }
   end
 
-  def open_registrations
-    Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
+  field :open_registrations do |object|
+    object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 
-  def metadata
+  field :metadata do
     {}
   end
 
-  private
-
-  def instance_presenter
-    @instance_presenter ||= InstancePresenter.new
-  end
+  transform NodeInfo::Transformer
 end

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-class NodeInfo::DiscoverySerializer < ActiveModel::Serializer
-  include RoutingHelper
+class NodeInfo::DiscoverySerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attribute :links
-
-  def links
+  field :links do
     [{ rel: 'http://nodeinfo.diaspora.software/ns/schema/2.0', href: nodeinfo_schema_url }]
   end
+
+  transform NodeInfo::Transformer
 end
