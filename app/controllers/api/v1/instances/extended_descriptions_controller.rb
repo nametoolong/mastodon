@@ -7,7 +7,7 @@ class Api::V1::Instances::ExtendedDescriptionsController < Api::BaseController
 
   def show
     expires_in 3.minutes, public: true
-    render json: @extended_description, serializer: REST::ExtendedDescriptionSerializer
+    render json: REST::ExtendedDescriptionSerializer.render(@extended_description)
   end
 
   private

@@ -1,23 +1,13 @@
 # frozen_string_literal: true
 
-class REST::ExtendedDescriptionSerializer < ActiveModel::Serializer
-  attributes :updated_at, :content
+class REST::ExtendedDescriptionSerializer < Blueprinter::Base
+  field :updated_at
 
-  def updated_at
-    object.updated_at&.iso8601
-  end
-
-  def content
+  field :content do |object|
     if object.text.present?
-      markdown.render(object.text)
+      Redcarpet::Markdown.new(Redcarpet::Render::HTML).render(object.text)
     else
       ''
     end
-  end
-
-  private
-
-  def markdown
-    @markdown ||= Redcarpet::Markdown.new(Redcarpet::Render::HTML)
   end
 end
