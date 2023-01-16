@@ -1,5 +1,5 @@
 {
-  "name": "@mastodon/mastodon",
+  "name": "@nametoolong/nuage",
   "license": "AGPL-3.0-or-later",
   "engines": {
     "node": ">=14"
@@ -9,7 +9,6 @@
     "build:development": "cross-env RAILS_ENV=development NODE_ENV=development ./bin/webpack",
     "build:production": "cross-env RAILS_ENV=production NODE_ENV=production ./bin/webpack",
     "manage:translations": "node ./config/webpack/translationRunner.js",
-    "start": "node ./streaming/index.js",
     "test": "${npm_execpath} run test:lint:js && ${npm_execpath} run test:jest",
     "test:lint": "${npm_execpath} run test:lint:js && ${npm_execpath} run test:lint:sass",
     "test:lint:js": "eslint --ext=js . --cache",
@@ -20,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/mastodon/mastodon.git"
+    "url": "https://github.com/nametoolong/nuage.git"
   },
   "private": true,
   "dependencies": {
