@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class REST::RuleSerializer < ActiveModel::Serializer
-  attributes :id, :text
+class REST::RuleSerializer < Blueprinter::Base
+  field :text
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 end

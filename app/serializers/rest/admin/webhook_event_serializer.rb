@@ -1,26 +1,15 @@
 # frozen_string_literal: true
 
-class REST::Admin::WebhookEventSerializer < ActiveModel::Serializer
-  def self.serializer_for(model, options)
-    case model.class.name
-    when 'Account'
-      REST::Admin::AccountSerializer
-    when 'Report'
-      REST::Admin::ReportSerializer
-    else
-      super
-    end
+class REST::Admin::WebhookEventSerializer < Blueprinter::Base
+  field :created_at
+
+  field :type, name: :event
+
+  view :account do
+    association :object, blueprint: REST::Admin::AccountSerializer
   end
 
-  attributes :event, :created_at
-
-  has_one :virtual_object, key: :object
-
-  def virtual_object
-    object.object
-  end
-
-  def event
-    object.type
+  view :report do
+    association :object, blueprint: REST::Admin::ReportSerializer, view: :guest
   end
 end

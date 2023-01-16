@@ -6,7 +6,7 @@ class Api::V1::Instances::RulesController < Api::BaseController
   before_action :set_rules
 
   def index
-    render json: @rules, each_serializer: REST::RuleSerializer
+    render json: REST::RuleSerializer.render(@rules)
   end
 
   private

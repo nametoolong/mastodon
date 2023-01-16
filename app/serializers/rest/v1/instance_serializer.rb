@@ -1,62 +1,49 @@
 # frozen_string_literal: true
 
-class REST::V1::InstanceSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class REST::V1::InstanceSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :uri, :title, :short_description, :description, :email,
-             :version, :urls, :stats, :thumbnail,
-             :languages, :registrations, :approval_required, :invites_enabled,
-             :configuration
+  fields :title, :version, :languages
 
-  attribute :contact_account
+  field :domain, name: :uri
 
-  has_many :rules, serializer: REST::RuleSerializer
-
-  def uri
-    object.domain
-  end
-
-  def short_description
+  field :short_description do |object|
     object.description
   end
 
-  def description
+  field :description do
     Setting.site_description # Legacy
   end
 
-  def email
+  field :email do |object|
     object.contact.email
   end
 
-  def contact_account
-    REST::AccountSerializer.render_as_json(object.contact.account) if object.contact.account
+  field :thumbnail do |object|
+    object.thumbnail ? full_asset_url(object.thumbnail.file.url(:'@1x')) : full_pack_url('media/images/preview.png')
   end
 
-  def thumbnail
-    instance_presenter.thumbnail ? full_asset_url(instance_presenter.thumbnail.file.url(:'@1x')) : full_pack_url('media/images/preview.png')
-  end
-
-  def stats
+  field :stats do |object|
     {
-      user_count: instance_presenter.user_count,
-      status_count: instance_presenter.status_count,
-      domain_count: instance_presenter.domain_count,
+      user_count: object.user_count,
+      status_count: object.status_count,
+      domain_count: object.domain_count,
     }
   end
 
-  def urls
+  field :urls do
     { streaming_api: Rails.configuration.x.streaming_api_base_url }
   end
 
-  def usage
+  field :usage do |object|
     {
       users: {
-        active_month: instance_presenter.active_user_count(4),
+        active_month: object.active_user_count(4),
       },
     }
   end
 
-  def configuration
+  field :configuration do
     {
       accounts: {
         max_featured_tags: FeaturedTag::LIMIT,
@@ -86,21 +73,20 @@ class REST::V1::InstanceSerializer < ActiveModel::Serializer
     }
   end
 
-  def registrations
+  field :registrations do |object|
     object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 
-  def approval_required
+  field :approval_required do |object|
     object.registrations_mode == 'approved'
   end
 
-  def invites_enabled
+  field :invites_enabled do
     UserRole.everyone.can?(:invite_users)
   end
 
-  private
-
-  def instance_presenter
-    @instance_presenter ||= InstancePresenter.new
+  association :rules, blueprint: REST::RuleSerializer
+  association :contact_account, blueprint: REST::AccountSerializer do |object|
+    object.contact.account
   end
 end

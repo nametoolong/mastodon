@@ -24,46 +24,46 @@ class Api::V1::Admin::ReportsController < Api::BaseController
 
   def index
     authorize :report, :index?
-    render json: @reports, each_serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @reports)
   end
 
   def show
     authorize @report, :show?
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   def update
     authorize @report, :update?
     @report.update!(report_params)
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   def assign_to_self
     authorize @report, :update?
     @report.update!(assigned_account_id: current_account.id)
     log_action :assigned_to_self, @report
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   def unassign
     authorize @report, :update?
     @report.update!(assigned_account_id: nil)
     log_action :unassigned, @report
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   def reopen
     authorize @report, :update?
     @report.unresolve!
     log_action :reopen, @report
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   def resolve
     authorize @report, :update?
     @report.resolve!(current_account)
     log_action :resolve, @report
-    render json: @report, serializer: REST::Admin::ReportSerializer
+    render json: render_blueprint_with_account(REST::Admin::ReportSerializer, @report)
   end
 
   private

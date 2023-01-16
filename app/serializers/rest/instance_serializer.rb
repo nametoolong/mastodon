@@ -1,21 +1,12 @@
 # frozen_string_literal: true
 
-class REST::InstanceSerializer < ActiveModel::Serializer
-  class ContactSerializer < Blueprinter::Base
-    field :email
-    association :account, blueprint: REST::AccountSerializer
-  end
+class REST::InstanceSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  include RoutingHelper
+  fields :domain, :title, :version, :source_url, :description,
+         :languages
 
-  attributes :domain, :title, :version, :source_url, :description,
-             :usage, :thumbnail, :languages, :configuration,
-             :registrations
-
-  attribute :contact
-  has_many :rules, serializer: REST::RuleSerializer
-
-  def thumbnail
+  field :thumbnail do |object|
     if object.thumbnail
       {
         url: full_asset_url(object.thumbnail.file.url(:'@1x')),
@@ -32,7 +23,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
     end
   end
 
-  def usage
+  field :usage do |object|
     {
       users: {
         active_month: object.active_user_count(4),
@@ -40,7 +31,7 @@ class REST::InstanceSerializer < ActiveModel::Serializer
     }
   end
 
-  def configuration
+  field :configuration do
     {
       urls: {
         streaming: Rails.configuration.x.streaming_api_base_url,
@@ -78,33 +69,24 @@ class REST::InstanceSerializer < ActiveModel::Serializer
     }
   end
 
-  def registrations
+  field :registrations do |object|
+    enabled = object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
+    approval_required = object.registrations_mode == 'approved'
+    message = object.closed_registrations_message unless enabled || object.closed_registrations_message.blank?
+    message = Redcarpet::Markdown.new(Redcarpet::Render::HTML, no_images: true).render(message) if message.present?
+
     {
-      enabled: registrations_enabled?,
-      approval_required: object.registrations_mode == 'approved',
-      message: registrations_enabled? ? nil : registrations_message,
+      enabled: enabled,
+      approval_required: approval_required,
+      message: message,
     }
   end
 
-  def contact
-    ContactSerializer.render_as_json(object.contact)
+  class ContactSerializer < Blueprinter::Base
+    field :email
+    association :account, blueprint: REST::AccountSerializer
   end
 
-  private
-
-  def registrations_enabled?
-    object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
-  end
-
-  def registrations_message
-    if object.closed_registrations_message.present?
-      markdown.render(object.closed_registrations_message)
-    else
-      nil
-    end
-  end
-
-  def markdown
-    @markdown ||= Redcarpet::Markdown.new(Redcarpet::Render::HTML, no_images: true)
-  end
+  association :contact, blueprint: ContactSerializer
+  association :rules, blueprint: REST::RuleSerializer
 end

@@ -2,9 +2,13 @@
 
 module StaticRoutingHelper
   def full_asset_url(source, **options)
-    source = ActionController::Base.helpers.asset_url(source, **options) unless use_storage?
+    source = ActionController::Base.helpers.asset_url(source, options) unless use_storage?
 
     URI.join(asset_host, source).to_s
+  end
+
+  def full_pack_url(source, **options)
+    full_asset_url(Webpacker.instance.manifest.lookup!(source), **options)
   end
 
   URL_HELPER_METHODS = %i(
