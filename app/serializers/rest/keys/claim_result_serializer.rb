@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class REST::Keys::ClaimResultSerializer < ActiveModel::Serializer
-  attributes :account_id, :device_id, :key_id, :key, :signature
+class REST::Keys::ClaimResultSerializer < Blueprinter::Base
+  fields :device_id, :key_id, :key, :signature
 
-  def account_id
+  field :account_id do |object|
     object.account.id.to_s
   end
 end

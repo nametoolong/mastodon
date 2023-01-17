@@ -1,11 +1,9 @@
 # frozen_string_literal: true
 
-class REST::Keys::QueryResultSerializer < ActiveModel::Serializer
-  attributes :account_id
-
-  has_many :devices, serializer: REST::Keys::DeviceSerializer
-
-  def account_id
+class REST::Keys::QueryResultSerializer < Blueprinter::Base
+  field :account_id do |object|
     object.account.id.to_s
   end
+
+  association :devices, blueprint: REST::Keys::DeviceSerializer
 end
