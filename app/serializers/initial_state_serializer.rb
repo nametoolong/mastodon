@@ -103,7 +103,7 @@ class InitialStateSerializer < Blueprinter::Base
     ActiveRecord::Associations::Preloader.new.preload(accounts, [:account_stat, :user, { moved_to_account: [:account_stat, :user] }])
 
     accounts.each_with_object({}) do |acct, h|
-      h[acct.id.to_s] = REST::AccountSerializer.render_as_json(acct)
+      h[acct.id.to_s] = REST::AccountSerializer.render_as_hash(acct)
     end
   end
 
