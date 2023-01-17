@@ -1,17 +1,11 @@
 # frozen_string_literal: true
 
-class REST::DomainBlockSerializer < ActiveModel::Serializer
-  attributes :domain, :digest, :severity, :comment
+class REST::DomainBlockSerializer < Blueprinter::Base
+  field :severity
 
-  def domain
-    object.public_domain
-  end
-
-  def digest
-    object.domain_digest
-  end
-
-  def comment
-    object.public_comment if instance_options[:with_comment]
-  end
+  field :public_domain, name: :domain
+  field :domain_digest, name: :digest
+  field :public_comment, name: :comment, if: ->(_name, object, options) {
+    options[:with_comment]
+  }
 end
