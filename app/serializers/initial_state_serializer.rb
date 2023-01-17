@@ -5,6 +5,7 @@ class InitialStateSerializer < Blueprinter::Base
     instance_presenter = InstancePresenter.new
 
     site_settings = Setting.get_multi(%w(
+      site_title
       profile_directory
       trends
       registrations_mode
@@ -22,7 +23,7 @@ class InitialStateSerializer < Blueprinter::Base
       access_token: object[:token],
       locale: I18n.locale,
       domain: Addressable::IDNA.to_unicode(instance_presenter.domain),
-      title: instance_presenter.title,
+      title: site_settings[:site_title],
       admin: object[:admin]&.id&.to_s,
       search_enabled: Chewy.enabled?,
       repository: Mastodon::Version.repository,
