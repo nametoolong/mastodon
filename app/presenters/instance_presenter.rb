@@ -1,9 +1,6 @@
 # frozen_string_literal: true
 
 class InstancePresenter
-  include ActiveModel::Model
-  include ActiveModel::Serialization
-
   ContactPresenter = Struct.new(:email, :account)
 
   def contact
