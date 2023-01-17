@@ -12,7 +12,7 @@ module WellKnown
 
     def show
       expires_in 3.days, public: true
-      render json: @account, serializer: WebfingerSerializer, content_type: 'application/jrd+json'
+      render json: WebfingerSerializer.render(@account), content_type: 'application/jrd+json'
     end
 
     private

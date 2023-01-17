@@ -1,15 +1,11 @@
 # frozen_string_literal: true
 
-class WebfingerSerializer < ActiveModel::Serializer
-  include RoutingHelper
+class WebfingerSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
-  attributes :subject, :aliases, :links
+  field :to_webfinger_s, name: :subject
 
-  def subject
-    object.to_webfinger_s
-  end
-
-  def aliases
+  field :aliases do |object|
     if object.instance_actor?
       [instance_actor_url]
     else
@@ -17,7 +13,7 @@ class WebfingerSerializer < ActiveModel::Serializer
     end
   end
 
-  def links
+  field :links do |object|
     if object.instance_actor?
       [
         { rel: 'http://webfinger.net/rel/profile-page', type: 'text/html', href: about_more_url(instance_actor: true) },
