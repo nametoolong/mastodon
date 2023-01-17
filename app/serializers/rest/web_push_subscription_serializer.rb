@@ -4,7 +4,7 @@ class REST::WebPushSubscriptionSerializer < Blueprinter::Base
   fields :id, :endpoint
 
   field :alerts do |object|
-    (object.data&.dig('alerts') || {}).each_with_object({}) { |(k, v), h| h[k] = ActiveModel::Type::Boolean.new.cast(v) }
+    (object.data&.dig('alerts') || {}).transform_values { |v| ActiveModel::Type::Boolean.new.cast(v) }
   end
 
   field :server_key do
