@@ -7,11 +7,11 @@ class REST::FilterSerializer < Blueprinter::Base
     object.id.to_s
   end
 
-  association :keywords, if: -> (_name, object, options) {
+  association :keywords, if: ->(_name, object, options) {
     options[:rules_requested]
   }, blueprint: REST::FilterKeywordSerializer
 
-  association :statuses, if: -> (_name, object, options) {
+  association :statuses, if: ->(_name, object, options) {
     options[:rules_requested]
   }, blueprint: REST::FilterStatusSerializer
 end

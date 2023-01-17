@@ -13,7 +13,7 @@ class REST::CustomEmojiSerializer < Blueprinter::Base
     full_asset_url(object.image.url(:static))
   end
 
-  field :category, if: -> (_name, object, options) {
+  field :category, if: ->(_name, object, options) {
     object.association(:category).loaded? && object.category.present?
   } do |object|
     object.category.name
