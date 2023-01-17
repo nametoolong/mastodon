@@ -8,7 +8,7 @@ class Api::V1::Instances::DomainBlocksController < Api::BaseController
 
   def index
     expires_in 3.minutes, public: true
-    render json: REST::DomainBlockSerializer.render(@domain_blocks, with_comment: (Setting.show_domain_blocks_rationale == 'all' || (Setting.show_domain_blocks_rationale == 'users' && user_signed_in?)))
+    render json: REST::DomainBlockSerializer.render(@domain_blocks, view: (with_comment? ? :with_comment : :without_comment))
   end
 
   private
@@ -19,5 +19,9 @@ class Api::V1::Instances::DomainBlocksController < Api::BaseController
 
   def set_domain_blocks
     @domain_blocks = DomainBlock.with_user_facing_limitations.by_severity
+  end
+
+  def with_comment?
+    Setting.show_domain_blocks_rationale == 'all' || (Setting.show_domain_blocks_rationale == 'users' && user_signed_in?)
   end
 end
