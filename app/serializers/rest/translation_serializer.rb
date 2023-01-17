@@ -3,5 +3,5 @@
 class REST::TranslationSerializer < Blueprinter::Base
   fields :detected_source_language, :provider
 
-  field :text:, name: :content
+  field :text, name: :content
 end
