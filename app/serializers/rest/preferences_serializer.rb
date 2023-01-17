@@ -1,35 +1,27 @@
 # frozen_string_literal: true
 
-class REST::PreferencesSerializer < ActiveModel::Serializer
-  attribute :posting_default_privacy, key: 'posting:default:visibility'
-  attribute :posting_default_sensitive, key: 'posting:default:sensitive'
-  attribute :posting_default_language, key: 'posting:default:language'
-
-  attribute :reading_default_sensitive_media, key: 'reading:expand:media'
-  attribute :reading_default_sensitive_text, key: 'reading:expand:spoilers'
-  attribute :reading_autoplay_gifs, key: 'reading:autoplay:gifs'
-
-  def posting_default_privacy
+class REST::PreferencesSerializer < Blueprinter::Base
+  field 'posting:default:visibility' do |object|
     object.user.setting_default_privacy
   end
 
-  def posting_default_sensitive
+  field 'posting:default:sensitive' do |object|
     object.user.setting_default_sensitive
   end
 
-  def posting_default_language
+  field 'posting:default:language' do |object|
     object.user.preferred_posting_language
   end
 
-  def reading_default_sensitive_media
+  field 'reading:expand:media' do |object|
     object.user.setting_display_media
   end
 
-  def reading_default_sensitive_text
+  field 'reading:expand:spoilers' do |object|
     object.user.setting_expand_spoilers
   end
 
-  def reading_autoplay_gifs
+  field 'reading:autoplay:gifs' do |object|
     object.user.setting_auto_play_gif
   end
 end
