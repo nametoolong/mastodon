@@ -15,10 +15,12 @@ module StaticRoutingHelper
     about_more_url
     account_url
     authorize_interaction_url
+    embed_short_account_status_url
     instance_actor_url
     media_proxy_url
     medium_url
     nodeinfo_schema_url
+    root_url
     short_account_tag_url
     short_account_url
     tag_url
@@ -32,8 +34,7 @@ module StaticRoutingHelper
 
   def asset_host
     @root_url ||= begin
-      Rails.configuration.action_controller.asset_host ||
-      Rails.application.routes.url_helpers.root_url(host: ActionMailer::Base.default_url_options[:host])
+      Rails.configuration.action_controller.asset_host || root_url(host: ActionMailer::Base.default_url_options[:host])
     end
   end
 

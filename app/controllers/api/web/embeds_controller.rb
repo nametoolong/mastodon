@@ -8,7 +8,7 @@ class Api::Web::EmbedsController < Api::Web::BaseController
 
     return not_found if status.hidden?
 
-    render json: status, serializer: OEmbedSerializer, width: 400
+    render json: OEmbedSerializer.render(status, width: 400)
   rescue ActiveRecord::RecordNotFound
     oembed = FetchOEmbedService.new.call(params[:url])
 

@@ -7,7 +7,7 @@ class Api::OEmbedController < Api::BaseController
   before_action :require_public_status!
 
   def show
-    render json: @status, serializer: OEmbedSerializer, width: maxwidth_or_default, height: maxheight_or_default
+    render json: OEmbedSerializer.render(@status, width: maxwidth_or_default, height: maxheight_or_default)
   end
 
   private
