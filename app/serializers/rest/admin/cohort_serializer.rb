@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
-class REST::Admin::CohortSerializer < ActiveModel::Serializer
-  attributes :period, :frequency
+class REST::Admin::CohortSerializer < Blueprinter::Base
+  field :frequency
 
-  class CohortDataSerializer < ActiveModel::Serializer
-    attributes :date, :rate, :value
+  field :period do |object|
+    object.period.iso8601
+  end
 
-    def date
+  class CohortDataSerializer < Blueprinter::Base
+    fields :rate, :value
+
+    field :date do |object|
       object.date.iso8601
     end
   end
 
-  has_many :data, serializer: CohortDataSerializer
-
-  def period
-    object.period.iso8601
-  end
+  association :data, blueprint: CohortDataSerializer
 end
