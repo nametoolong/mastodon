@@ -44,7 +44,7 @@ module StaticRoutingHelper
 
   def delegate_to_url_helper(method, args)
     @url_helpers ||= Rails.application.routes.url_helpers
-    @url_options ||= { host: ActionMailer::Base.default_url_options[:host] }
+    @url_options ||= ActionMailer::Base.default_url_options
     @url_helpers.send(method, *args, **@url_options)
   end
 end
