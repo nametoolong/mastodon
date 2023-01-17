@@ -51,16 +51,9 @@ class Web::PushNotificationWorker
   private
 
   def push_notification_json
-    json = I18n.with_locale(@subscription.locale.presence || I18n.default_locale) do
-      ActiveModelSerializers::SerializableResource.new(
-        @notification,
-        serializer: Web::NotificationSerializer,
-        scope: @subscription,
-        scope_name: :current_push_subscription
-      ).as_json
+    I18n.with_locale(@subscription.locale.presence || I18n.default_locale) do
+      Web::NotificationSerializer.render(Web::NotificationPresenter.new(@notification, @subscription))
     end
-
-    Oj.dump(json)
   end
 
   def request_pool
