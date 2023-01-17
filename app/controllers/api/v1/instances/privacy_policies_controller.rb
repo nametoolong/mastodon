@@ -7,7 +7,7 @@ class Api::V1::Instances::PrivacyPoliciesController < Api::BaseController
 
   def show
     expires_in 1.day, public: true
-    render json: @privacy_policy, serializer: REST::PrivacyPolicySerializer
+    render json: REST::PrivacyPolicySerializer.render(@privacy_policy)
   end
 
   private
