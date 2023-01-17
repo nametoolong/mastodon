@@ -32,7 +32,7 @@ class Api::V1::MarkersController < Api::BaseController
     serialized = {}
 
     map.each_pair do |key, value|
-      serialized[key] = ActiveModelSerializers::SerializableResource.new(value, serializer: REST::MarkerSerializer).as_json
+      serialized[key] = REST::MarkerSerializer.render_as_hash(value)
     end
 
     Oj.dump(serialized)

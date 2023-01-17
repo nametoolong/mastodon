@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
-class REST::MarkerSerializer < ActiveModel::Serializer
-  attributes :last_read_id, :version, :updated_at
+class REST::MarkerSerializer < Blueprinter::Base
+  field :updated_at
 
-  def last_read_id
+  field :lock_version, name: :version
+
+  field :last_read_id do |object|
     object.last_read_id.to_s
-  end
-
-  def version
-    object.lock_version
   end
 end
