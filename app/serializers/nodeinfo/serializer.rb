@@ -17,20 +17,22 @@ class NodeInfo::Serializer < Blueprinter::Base
     %w(activitypub)
   end
 
-  field :usage do |object|
+  field :usage do
+    instance_presenter = InstancePresenter.new
+
     {
       users: {
-        total: object.user_count,
-        active_month: object.active_user_count(4),
-        active_halfyear: object.active_user_count(24),
+        total: instance_presenter.user_count,
+        active_month: instance_presenter.active_user_count(4),
+        active_halfyear: instance_presenter.active_user_count(24),
       },
 
-      local_posts: object.status_count,
+      local_posts: instance_presenter.status_count,
     }
   end
 
-  field :open_registrations do |object|
-    object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
+  field :open_registrations do
+    Setting.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 
   field :metadata do

@@ -13,7 +13,7 @@ module WellKnown
 
     def show
       expires_in 30.minutes, public: true
-      render_with_cache(expires_in: 30.minutes) { NodeInfo::Serializer.render(InstancePresenter.new) }
+      render_with_cache(expires_in: 30.minutes) { NodeInfo::Serializer.render({}) }
     end
   end
 end

@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
-class ManifestSerializer < ActiveModel::Serializer
-  include RoutingHelper
-  include ActionView::Helpers::TextHelper
+class ManifestSerializer < Blueprinter::Base
+  extend StaticRoutingHelper
 
   ICON_SIZES = %w(
     36
@@ -16,20 +15,15 @@ class ManifestSerializer < ActiveModel::Serializer
     512
   ).freeze
 
-  attributes :name, :short_name,
-             :icons, :theme_color, :background_color,
-             :display, :start_url, :scope,
-             :share_target, :shortcuts
-
-  def name
-    object.title
+  field :name do
+    Setting.site_title
   end
 
-  def short_name
-    object.title
+  field :short_name do
+    Setting.site_title
   end
 
-  def icons
+  field :icons do
     ICON_SIZES.map do |size|
       {
         src: full_pack_url("media/icons/android-chrome-#{size}x#{size}.png"),
@@ -40,27 +34,27 @@ class ManifestSerializer < ActiveModel::Serializer
     end
   end
 
-  def theme_color
+  field :theme_color do
     '#191b22'
   end
 
-  def background_color
+  field :background_color do
     '#191b22'
   end
 
-  def display
+  field :display do
     'standalone'
   end
 
-  def start_url
+  field :start_url do
     '/home'
   end
 
-  def scope
+  field :scope do
     '/'
   end
 
-  def share_target
+  field :share_target do
     {
       url_template: 'share?title={title}&text={text}&url={url}',
       action: 'share',
@@ -74,7 +68,7 @@ class ManifestSerializer < ActiveModel::Serializer
     }
   end
 
-  def shortcuts
+  field :shortcuts do
     [
       {
         name: 'Compose new post',
