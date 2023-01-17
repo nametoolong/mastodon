@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
-class REST::Admin::DomainAllowSerializer < ActiveModel::Serializer
-  attributes :id, :domain, :created_at
+class REST::Admin::DomainAllowSerializer < Blueprinter::Base
+  fields :domain, :created_at
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 end

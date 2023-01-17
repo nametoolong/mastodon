@@ -26,17 +26,17 @@ class Api::V1::Admin::DomainAllowsController < Api::BaseController
       log_action :create, @domain_allow
     end
 
-    render json: @domain_allow, serializer: REST::Admin::DomainAllowSerializer
+    render json: REST::Admin::DomainAllowSerializer.render(@domain_allow)
   end
 
   def index
     authorize :domain_allow, :index?
-    render json: @domain_allows, each_serializer: REST::Admin::DomainAllowSerializer
+    render json: REST::Admin::DomainAllowSerializer.render(@domain_allows)
   end
 
   def show
     authorize @domain_allow, :show?
-    render json: @domain_allow, serializer: REST::Admin::DomainAllowSerializer
+    render json: REST::Admin::DomainAllowSerializer.render(@domain_allow)
   end
 
   def destroy

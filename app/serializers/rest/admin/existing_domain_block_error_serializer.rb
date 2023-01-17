@@ -1,15 +1,9 @@
 # frozen_string_literal: true
 
-class REST::Admin::ExistingDomainBlockErrorSerializer < ActiveModel::Serializer
-  attributes :error
-
-  has_one :existing_domain_block, serializer: REST::Admin::DomainBlockSerializer
-
-  def error
-    I18n.t('admin.domain_blocks.existing_domain_block', name: existing_domain_block.domain)
+class REST::Admin::ExistingDomainBlockErrorSerializer < Blueprinter::Base
+  field :error do |object|
+    I18n.t('admin.domain_blocks.existing_domain_block', name: object.domain)
   end
 
-  def existing_domain_block
-    object
-  end
+  association :itself, name: :existing_domain_block, blueprint: REST::Admin::DomainBlockSerializer
 end

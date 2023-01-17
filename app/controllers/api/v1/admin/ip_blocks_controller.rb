@@ -22,24 +22,24 @@ class Api::V1::Admin::IpBlocksController < Api::BaseController
     authorize :ip_block, :create?
     @ip_block = IpBlock.create!(resource_params)
     log_action :create, @ip_block
-    render json: @ip_block, serializer: REST::Admin::IpBlockSerializer
+    render json: REST::Admin::IpBlockSerializer.render(@ip_block)
   end
 
   def index
     authorize :ip_block, :index?
-    render json: @ip_blocks, each_serializer: REST::Admin::IpBlockSerializer
+    render json: REST::Admin::IpBlockSerializer.render(@ip_blocks)
   end
 
   def show
     authorize @ip_block, :show?
-    render json: @ip_block, serializer: REST::Admin::IpBlockSerializer
+    render json: REST::Admin::IpBlockSerializer.render(@ip_block)
   end
 
   def update
     authorize @ip_block, :update?
     @ip_block.update(resource_params)
     log_action :update, @ip_block
-    render json: @ip_block, serializer: REST::Admin::IpBlockSerializer
+    render json: REST::Admin::IpBlockSerializer.render(@ip_block)
   end
 
   def destroy

@@ -1,21 +1,21 @@
 # frozen_string_literal: true
 
-class REST::Admin::MeasureSerializer < ActiveModel::Serializer
-  attributes :key, :unit, :total
+class REST::Admin::MeasureSerializer < Blueprinter::Base
+  fields :key, :unit, :data
 
-  attribute :human_value, if: -> { object.respond_to?(:value_to_human_value) }
-  attribute :previous_total, if: -> { object.total_in_time_range? }
-  attribute :data
-
-  def total
+  field :total do |object|
     object.total.to_s
   end
 
-  def human_value
+  field :human_value, if: ->(_name, object, options) {
+    object.respond_to?(:value_to_human_value)
+  } do |object|
     object.value_to_human_value(object.total)
   end
 
-  def previous_total
+  field :previous_total, if: ->(_name, object, options) {
+    object.total_in_time_range?
+  } do |object|
     object.previous_total.to_s
   end
 end

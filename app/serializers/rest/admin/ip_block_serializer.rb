@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
-class REST::Admin::IpBlockSerializer < ActiveModel::Serializer
-  attributes :id, :ip, :severity, :comment,
-             :created_at, :expires_at
+class REST::Admin::IpBlockSerializer < Blueprinter::Base
+  fields :severity, :comment, :created_at, :expires_at
 
-  def id
+  field :id do |object|
     object.id.to_s
   end
 
-  def ip
+  field :ip do |object|
     "#{object.ip}/#{object.ip.prefix}"
   end
 end

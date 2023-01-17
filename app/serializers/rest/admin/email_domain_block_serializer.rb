@@ -1,9 +1,13 @@
 # frozen_string_literal: true
 
-class REST::Admin::EmailDomainBlockSerializer < ActiveModel::Serializer
-  attributes :id, :domain, :created_at, :history
+class REST::Admin::EmailDomainBlockSerializer < Blueprinter::Base
+  fields :domain, :created_at
 
-  def id
+  field :id do |object|
     object.id.to_s
+  end
+
+  field :history do |object|
+    object.history.as_json
   end
 end
