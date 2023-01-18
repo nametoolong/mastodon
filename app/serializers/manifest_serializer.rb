@@ -15,12 +15,12 @@ class ManifestSerializer < Blueprinter::Base
     512
   ).freeze
 
-  field :name do
-    Setting.site_title
+  field :name do |object|
+    object.title
   end
 
-  field :short_name do
-    Setting.site_title
+  field :short_name do |object|
+    object.title
   end
 
   field :icons do

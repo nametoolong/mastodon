@@ -2,7 +2,7 @@
 
 class InitialStateSerializer < Blueprinter::Base
   field :meta do |object|
-    instance_presenter = InstancePresenter.new
+    site_presenter = SitePresenter.new
 
     site_settings = Setting.get_multi(%w(
       site_title
@@ -22,15 +22,15 @@ class InitialStateSerializer < Blueprinter::Base
       streaming_api_base_url: Rails.configuration.x.streaming_api_base_url,
       access_token: object[:token],
       locale: I18n.locale,
-      domain: Addressable::IDNA.to_unicode(instance_presenter.domain),
+      domain: Addressable::IDNA.to_unicode(site_presenter.domain),
       title: site_settings[:site_title],
       admin: object[:admin]&.id&.to_s,
       search_enabled: Chewy.enabled?,
       repository: Mastodon::Version.repository,
-      source_url: instance_presenter.source_url,
-      version: instance_presenter.version,
+      source_url: site_presenter.source_url,
+      version: site_presenter.version,
       limited_federation_mode: Rails.configuration.x.whitelist_mode,
-      mascot: instance_presenter.mascot&.file&.url,
+      mascot: site_presenter.mascot&.file&.url,
       profile_directory: site_settings[:profile_directory],
       trends: site_settings[:trends],
       registrations_open: site_settings[:registrations_mode] != 'none' && !Rails.configuration.x.single_user_mode,

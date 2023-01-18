@@ -6,6 +6,6 @@ class ManifestsController < ApplicationController
 
   def show
     expires_in 3.minutes, public: true
-    render json: ManifestSerializer.render({})
+    render json: ManifestSerializer.render(SitePresenter.new)
   end
 end
