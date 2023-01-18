@@ -6,11 +6,11 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   layout :determine_layout
 
   before_action :set_invite, only: [:new, :create]
+  before_action :set_instance_presenter, only: [:new, :create, :update]
   before_action :check_enabled_registrations, only: [:new, :create]
   before_action :configure_sign_up_params, only: [:create]
   before_action :set_sessions, only: [:edit, :update]
   before_action :set_strikes, only: [:edit, :update]
-  before_action :set_instance_presenter, only: [:new, :create, :update]
   before_action :set_body_classes, only: [:new, :create, :edit, :update]
   before_action :require_not_suspended!, only: [:update]
   before_action :set_cache_headers, only: [:edit, :update]
