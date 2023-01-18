@@ -41,6 +41,6 @@ class InstancePresenter < SitePresenter
   @@setting_keys = nil
 
   def setting_keys
-    @@setting_keys ||= super.merge(SETTING_KEYS)
+    @@setting_keys ||= super + SETTING_KEYS
   end
 end
