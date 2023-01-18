@@ -41,15 +41,15 @@ module ApplicationHelper
   end
 
   def open_registrations?
-    Setting.registrations_mode == 'open'
+    (@instance_presenter || Setting).registrations_mode == 'open'
   end
 
   def approved_registrations?
-    Setting.registrations_mode == 'approved'
+    (@instance_presenter || Setting).registrations_mode == 'approved'
   end
 
   def closed_registrations?
-    Setting.registrations_mode == 'none'
+    (@instance_presenter || Setting).registrations_mode == 'none'
   end
 
   def available_sign_up_path
@@ -227,7 +227,7 @@ module ApplicationHelper
       state_params[:owner] = Account.local.without_suspended.where('id > 0').first
     end
 
-    json = InitialStateSerializer.render(state_params)
+    json = InitialStateSerializer.render(state_params, instance_presenter: @instance_presenter)
 
     # rubocop:disable Rails/OutputSafety
     content_tag(:script, json_escape(json).html_safe, id: 'initial-state', type: 'application/json')
