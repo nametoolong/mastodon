@@ -88,7 +88,7 @@ class Auth::RegistrationsController < Devise::RegistrationsController
   end
 
   def allowed_registrations?
-    Setting.registrations_mode != 'none' || @invite&.valid_for_use?
+    @instance_presenter.registrations_mode != 'none' || @invite&.valid_for_use?
   end
 
   def omniauth_only?
