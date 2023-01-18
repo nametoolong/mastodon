@@ -1,14 +1,7 @@
 # frozen_string_literal: true
 
 class FamiliarFollowersPresenter
-  class Result
-    attr_reader :id, :accounts
-
-    def initialize(id:, accounts:)
-      @id = id
-      @accounts = accounts
-    end
-  end
+  Result = Struct.new(:id, :accounts, keyword_init: true)
 
   def initialize(accounts, current_account_id)
     @accounts           = accounts

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-class ExtendedDescription < ActiveModelSerializers::Model
-  attributes :updated_at, :text
-
+class ExtendedDescription < Struct.new(:text, :updated_at, keyword_init: true)
   def self.current
     custom = Setting.find_by(var: 'site_extended_description')
 

@@ -3,13 +3,8 @@
 class Admin::Metrics::Retention
   CACHE_TTL = 5.minutes.freeze
 
-  class Cohort < ActiveModelSerializers::Model
-    attributes :period, :frequency, :data
-  end
-
-  class CohortData < ActiveModelSerializers::Model
-    attributes :date, :rate, :value
-  end
+  Cohort = Struct.new(:period, :frequency, :data, keyword_init: true)
+  CohortData = Struct.new(:date, :rate, :value, keyword_init: true)
 
   attr_reader :loaded
 

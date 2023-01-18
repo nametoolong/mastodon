@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class PrivacyPolicy < ActiveModelSerializers::Model
+class PrivacyPolicy < Struct.new(:text, :updated_at, keyword_init: true)
   DEFAULT_PRIVACY_POLICY = <<~TXT
     This privacy policy describes how %{domain} ("%{domain}", "we", "us") collects, protects and uses the personally identifiable information you may provide through the %{domain} website or its API. The policy also describes the choices available to you regarding our use of your personal information and how you can access and update this information. This policy does not apply to the practices of companies that %{domain} does not own or control, or to individuals that %{domain} does not employ or manage.
 
@@ -62,8 +62,6 @@ class PrivacyPolicy < ActiveModelSerializers::Model
   TXT
 
   DEFAULT_UPDATED_AT = DateTime.new(2022, 10, 7).freeze
-
-  attributes :updated_at, :text
 
   def self.current
     custom = Setting.find_by(var: 'site_terms')

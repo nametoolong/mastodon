@@ -3,10 +3,7 @@
 class Keys::ClaimService < BaseService
   HEADERS = { 'Content-Type' => 'application/activity+json' }.freeze
 
-  class Result < ActiveModelSerializers::Model
-    attributes :account, :device_id, :key_id,
-               :key, :signature
-
+  class Result < Struct.new(:account, :device_id, :key_id, :key, :signature, keyword_init: true)
     def initialize(account, device_id, key_attributes = {})
       super(
         account:   account,

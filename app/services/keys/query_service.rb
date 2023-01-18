@@ -3,14 +3,12 @@
 class Keys::QueryService < BaseService
   include JsonLdHelper
 
-  class Result < ActiveModelSerializers::Model
-    attributes :account, :devices
+  class Result
+    attr_reader :account, :devices
 
     def initialize(account, devices)
-      super(
-        account: account,
-        devices: devices || [],
-      )
+      @account = account
+      @devices = devices || []
     end
 
     def find(device_id)
@@ -18,17 +16,16 @@ class Keys::QueryService < BaseService
     end
   end
 
-  class Device < ActiveModelSerializers::Model
-    attributes :device_id, :name, :identity_key, :fingerprint_key
+  class Device
+    attr_reader :device_id, :name, :identity_key, :fingerprint_key
 
     def initialize(attributes = {})
-      super(
-        device_id:       attributes[:device_id],
-        name:            attributes[:name],
-        identity_key:    attributes[:identity_key],
-        fingerprint_key: attributes[:fingerprint_key],
-      )
-      @claim_url = attributes[:claim_url]
+      @device_id       = attributes[:device_id],
+      @name            = attributes[:name],
+      @identity_key    = attributes[:identity_key],
+      @fingerprint_key = attributes[:fingerprint_key],
+
+      @claim_url       = attributes[:claim_url]
     end
 
     def valid_claim_url?
