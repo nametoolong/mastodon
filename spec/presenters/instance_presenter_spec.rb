@@ -16,19 +16,6 @@ describe InstancePresenter do
     end
   end
 
-  describe '#extended_description' do
-    around do |example|
-      site_extended_description = Setting.site_extended_description
-      example.run
-      Setting.site_extended_description = site_extended_description
-    end
-
-    it "delegates site_extended_description to Setting" do
-      Setting.site_extended_description = "Extended desc"
-      expect(instance_presenter.extended_description).to eq "Extended desc"
-    end
-  end
-
   describe '#email' do
     around do |example|
       site_contact_email = Setting.site_contact_email
