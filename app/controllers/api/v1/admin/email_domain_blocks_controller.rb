@@ -24,17 +24,17 @@ class Api::V1::Admin::EmailDomainBlocksController < Api::BaseController
     @email_domain_block = EmailDomainBlock.create!(resource_params)
     log_action :create, @email_domain_block
 
-    render json: REST::Admin::EmailDomainBlockSerializer(@email_domain_block)
+    render json: REST::Admin::EmailDomainBlockSerializer.render(@email_domain_block)
   end
 
   def index
     authorize :email_domain_block, :index?
-    render json: REST::Admin::EmailDomainBlockSerializer(@email_domain_blocks)
+    render json: REST::Admin::EmailDomainBlockSerializer.render(@email_domain_blocks)
   end
 
   def show
     authorize @email_domain_block, :show?
-    render json: REST::Admin::EmailDomainBlockSerializer(@email_domain_block)
+    render json: REST::Admin::EmailDomainBlockSerializer.render(@email_domain_block)
   end
 
   def destroy
