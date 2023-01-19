@@ -227,7 +227,7 @@ module ApplicationHelper
       state_params[:owner] = Account.local.without_suspended.where('id > 0').first
     end
 
-    json = InitialStateSerializer.render(state_params, instance_presenter: @instance_presenter)
+    json = InitialStateSerializer.render(state_params)
 
     # rubocop:disable Rails/OutputSafety
     content_tag(:script, json_escape(json).html_safe, id: 'initial-state', type: 'application/json')

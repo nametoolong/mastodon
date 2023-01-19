@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 class InitialStateSerializer < Blueprinter::Base
-  field :meta do |object, options|
-    site_presenter = options[:instance_presenter] || SitePresenter.new
+  field :meta do |object|
+    site_presenter = SitePresenter.new
 
     site_settings = Setting.get_multi(%w(
       site_title
