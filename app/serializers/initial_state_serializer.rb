@@ -11,6 +11,7 @@ class InitialStateSerializer < Blueprinter::Base
       registrations_mode
       timeline_preview
       activity_api_enabled
+      trends_as_landing_page
       auto_play_gif
       display_media
       reduce_motion
@@ -38,6 +39,7 @@ class InitialStateSerializer < Blueprinter::Base
       activity_api_enabled: site_settings[:activity_api_enabled],
       single_user_mode: Rails.configuration.x.single_user_mode,
       translation_enabled: TranslationService.configured?,
+      trends_as_landing_page: site_settings[:trends_as_landing_page],
     }
 
     if object[:current_account]

@@ -96,10 +96,20 @@ class REST::AccountSerializer < Blueprinter::Base
     end
   end
 
+  class AccountDecorator < SimpleDelegator
+    def self.model_name
+      Account.model_name
+    end
+
+    def moved?
+      false
+    end
+  end
+
   association :moved, blueprint: REST::AccountSerializer, if: ->(_name, object, options) {
-    object.moved? && object.moved_to_account.moved_to_account_id.nil?
+    object.moved?
   } do |object|
-    object.suspended? ? nil : object.moved_to_account
+    object.suspended? ? nil : AccountDecorator.new(object.moved_to_account)
   end
 
   association :emojis, blueprint: REST::CustomEmojiSerializer
