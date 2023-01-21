@@ -52,11 +52,13 @@ class SitePresenter
 
   private
 
-  def setting_keys
-    SETTING_KEYS
+  def site_settings
+    @site_settings ||= Setting.get_multi(self.class.setting_keys).symbolize_keys!
   end
 
-  def site_settings
-    @site_settings ||= Setting.get_multi(setting_keys).symbolize_keys!
+  class << self
+    def setting_keys
+      SETTING_KEYS
+    end
   end
 end

@@ -36,11 +36,9 @@ class InstancePresenter < SitePresenter
     Rule.ordered
   end
 
-  private
-
-  @@setting_keys = nil
-
-  def setting_keys
-    @@setting_keys ||= super + SETTING_KEYS
+  class << self
+    def setting_keys
+      @setting_keys ||= super + SETTING_KEYS
+    end
   end
 end
