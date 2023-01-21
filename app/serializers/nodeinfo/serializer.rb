@@ -21,21 +21,19 @@ class NodeInfo::Serializer < Blueprinter::Base
     {
       users: {
         total: object.user_count,
-        active_month: object.active_user_count(4),
-        active_halfyear: object.active_user_count(24),
+        activeMonth: object.active_user_count(4),
+        activeHalfyear: object.active_user_count(24),
       },
 
-      local_posts: object.status_count,
+      localPosts: object.status_count,
     }
   end
 
-  field :open_registrations do |object|
+  field :openRegistrations do |object|
     object.registrations_mode != 'none' && !Rails.configuration.x.single_user_mode
   end
 
   field :metadata do
     {}
   end
-
-  transform NodeInfo::Transformer
 end
