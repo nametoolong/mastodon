@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class SuspendAccountService < BaseService
-  include Payloadable
-
   # Carry out the suspension of a recently-suspended account
   # @param [Account] account Account to suspend
   def call(account)
@@ -34,7 +32,7 @@ class SuspendAccountService < BaseService
     follows = Follow.where(account: @account).to_a
 
     ActivityPub::DeliveryWorker.push_bulk(follows) do |follow|
-      [Oj.dump(serialize_payload(follow, ActivityPub::RejectFollowSerializer)), follow.target_account_id, @account.inbox_url]
+      [Oj.dump(ActivityPub::Renderer.new(:reject_follow, follow).render), follow.target_account_id, @account.inbox_url]
     end
 
     follows.each(&:destroy)
@@ -102,6 +100,6 @@ class SuspendAccountService < BaseService
   end
 
   def signed_activity_json
-    @signed_activity_json ||= Oj.dump(serialize_payload(@account, ActivityPub::UpdateSerializer, signer: @account))
+    @signed_activity_json ||= Oj.dump(ActivityPub::Renderer.new(:update_actor, @account).render(signer: @account))
   end
 end

@@ -1,5 +1,3 @@
 # frozen_string_literal: true
 
-class Context < ActiveModelSerializers::Model
-  attributes :ancestors, :descendants
-end
+Context = Struct.new(:ancestors, :descendants, keyword_init: true)

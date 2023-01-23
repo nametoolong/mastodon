@@ -10,7 +10,7 @@ class ActivityPub::ClaimsController < ActivityPub::BaseController
   before_action :set_claim_result
 
   def create
-    render json: @claim_result, serializer: ActivityPub::OneTimeKeySerializer
+    render json: ActivityPub::OneTimeKeySerializer.new(@claim_result).as_json
   end
 
   private

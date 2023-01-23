@@ -16,7 +16,7 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
     else
       expires_in(3.minutes, public: public_fetch_mode?)
     end
-    render json: outbox_presenter, serializer: ActivityPub::OutboxSerializer, adapter: ActivityPub::Adapter, content_type: 'application/activity+json'
+    render json: ActivityPub::Renderer.new(:outbox, outbox_presenter).render, content_type: 'application/activity+json'
   end
 
   private

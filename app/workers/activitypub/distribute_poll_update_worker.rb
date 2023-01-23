@@ -2,7 +2,6 @@
 
 class ActivityPub::DistributePollUpdateWorker
   include Sidekiq::Worker
-  include Payloadable
 
   sidekiq_options queue: 'push', lock: :until_executed, retry: 0
 
@@ -43,7 +42,7 @@ class ActivityPub::DistributePollUpdateWorker
   end
 
   def payload
-    @payload ||= Oj.dump(serialize_payload(@status, ActivityPub::UpdatePollSerializer, signer: @account))
+    @payload ||= Oj.dump(ActivityPub::Renderer.new(:update_note, @status).render(signer: @account))
   end
 
   def relay!

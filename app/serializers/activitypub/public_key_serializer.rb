@@ -3,17 +3,14 @@
 class ActivityPub::PublicKeySerializer < ActivityPub::Serializer
   context :security
 
-  attributes :id, :owner, :public_key_pem
+  serialize :id, :owner
+  serialize :publicKeyPem, from: :public_key
 
   def id
-    ActivityPub::TagManager.instance.key_uri_for(object)
+    ActivityPub::TagManager.instance.key_uri_for(model)
   end
 
   def owner
-    ActivityPub::TagManager.instance.uri_for(object)
-  end
-
-  def public_key_pem
-    object.public_key
+    ActivityPub::TagManager.instance.uri_for(model)
   end
 end

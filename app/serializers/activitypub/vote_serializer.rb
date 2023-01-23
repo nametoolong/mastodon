@@ -1,52 +1,29 @@
 # frozen_string_literal: true
 
 class ActivityPub::VoteSerializer < ActivityPub::Serializer
-  class NoteSerializer < ActivityPub::Serializer
-    attributes :id, :type, :name, :attributed_to,
-               :in_reply_to, :to
+  serialize(:type) { 'Note' }
 
-    def id
-      ActivityPub::TagManager.instance.uri_for(object) || [ActivityPub::TagManager.instance.uri_for(object.account), '#votes/', object.id].join
-    end
-
-    def type
-      'Note'
-    end
-
-    def name
-      object.poll.options[object.choice.to_i]
-    end
-
-    def attributed_to
-      ActivityPub::TagManager.instance.uri_for(object.account)
-    end
-
-    def in_reply_to
-      ActivityPub::TagManager.instance.uri_for(object.poll.status)
-    end
-
-    def to
-      ActivityPub::TagManager.instance.uri_for(object.poll.account)
-    end
-  end
-
-  attributes :id, :type, :actor, :to
-
-  has_one :object, serializer: ActivityPub::VoteSerializer::NoteSerializer
+  serialize :id, :name, :to
+  serialize :attributedTo, from: :attributed_to
+  serialize :inReplyTo, from: :in_reply_to
 
   def id
-    [ActivityPub::TagManager.instance.uri_for(object.account), '#votes/', object.id, '/activity'].join
+    ActivityPub::TagManager.instance.uri_for(model) || [ActivityPub::TagManager.instance.uri_for(model.account), '#votes/', model.id].join
   end
 
-  def type
-    'Create'
-  end
-
-  def actor
-    ActivityPub::TagManager.instance.uri_for(object.account)
+  def name
+    model.poll.options[model.choice.to_i]
   end
 
   def to
-    ActivityPub::TagManager.instance.uri_for(object.poll.account)
+    ActivityPub::TagManager.instance.uri_for(model.poll.account)
+  end
+
+  def attributed_to
+    ActivityPub::TagManager.instance.uri_for(model.account)
+  end
+
+  def in_reply_to
+    ActivityPub::TagManager.instance.uri_for(model.poll.status)
   end
 end

@@ -2,7 +2,6 @@
 
 class ReblogService < BaseService
   include Authorization
-  include Payloadable
 
   # Reblog a status and notify its remote author
   # @param [Account] account Account to reblog from
@@ -61,6 +60,6 @@ class ReblogService < BaseService
   end
 
   def build_json(reblog)
-    Oj.dump(serialize_payload(ActivityPub::ActivityPresenter.from_status(reblog), ActivityPub::ActivitySerializer, signer: reblog.account))
+    Oj.dump(ActivityPub::Renderer.new(:outbox, reblog).render(signer: reblog.account))
   end
 end

@@ -14,7 +14,7 @@ class ActivityPub::RepliesController < ActivityPub::BaseController
 
   def index
     expires_in 0, public: public_fetch_mode?
-    render json: replies_collection_presenter, serializer: ActivityPub::CollectionSerializer, adapter: ActivityPub::Adapter, content_type: 'application/activity+json', skip_activities: true
+    render json: ActivityPub::Renderer.new(:note, replies_collection_presenter).render, content_type: 'application/activity+json'
   end
 
   private

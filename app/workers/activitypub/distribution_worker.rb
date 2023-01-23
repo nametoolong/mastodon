@@ -19,11 +19,7 @@ class ActivityPub::DistributionWorker < ActivityPub::RawDistributionWorker
   end
 
   def payload
-    @payload ||= Oj.dump(serialize_payload(activity, ActivityPub::ActivitySerializer, signer: @account))
-  end
-
-  def activity
-    ActivityPub::ActivityPresenter.from_status(@status)
+    @payload ||= Oj.dump(ActivityPub::Renderer.new(:outbox, @status).render(signer: @account))
   end
 
   def options

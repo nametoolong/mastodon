@@ -5,6 +5,7 @@ class ActivityPub::CollectionsController < ActivityPub::BaseController
   include AccountOwnedConcern
 
   before_action :require_account_signature!, if: :authorized_fetch_mode?
+  before_action :set_intent
   before_action :set_items
   before_action :set_size
   before_action :set_type
@@ -12,10 +13,23 @@ class ActivityPub::CollectionsController < ActivityPub::BaseController
 
   def show
     expires_in 3.minutes, public: public_fetch_mode?
-    render_with_cache json: collection_presenter, content_type: 'application/activity+json', serializer: ActivityPub::CollectionSerializer, adapter: ActivityPub::Adapter
+    render_with_cache(content_type: 'application/activity+json') { ActivityPub::Renderer.new(@intent, collection_presenter).render }
   end
 
   private
+
+  def set_intent
+    case params[:id]
+    when 'featured'
+      @intent = :note
+    when 'tags'
+      @intent = :featured_tag
+    when 'devices'
+      @intent = :device
+    else
+      not_found
+    end
+  end
 
   def set_items
     case params[:id]

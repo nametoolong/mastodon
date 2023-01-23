@@ -3,29 +3,23 @@
 class ActivityPub::EmojiSerializer < ActivityPub::Serializer
   include RoutingHelper
 
-  context_extensions :emoji
+  context_extension :emoji
 
-  attributes :id, :type, :name, :updated
+  serialize(:type) { 'Emoji' }
 
-  has_one :icon, serializer: ActivityPub::ImageSerializer
+  serialize :id, :name, :updated
+
+  serialize :icon, from: :image, with: ActivityPub::ImageSerializer
 
   def id
-    ActivityPub::TagManager.instance.uri_for(object)
-  end
-
-  def type
-    'Emoji'
-  end
-
-  def icon
-    object.image
-  end
-
-  def updated
-    object.updated_at.iso8601
+    ActivityPub::TagManager.instance.uri_for(model)
   end
 
   def name
-    ":#{object.shortcode}:"
+    ":#{model.shortcode}:"
+  end
+
+  def updated
+    model.updated_at.iso8601
   end
 end

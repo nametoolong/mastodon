@@ -10,10 +10,7 @@ class ActivityPub::FollowersSynchronizationsController < ActivityPub::BaseContro
 
   def show
     expires_in 0, public: false
-    render json: collection_presenter,
-           serializer: ActivityPub::CollectionSerializer,
-           adapter: ActivityPub::Adapter,
-           content_type: 'application/activity+json'
+    render json: ActivityPub::Renderer.new(:actor, collection_presenter).render, content_type: 'application/activity+json'
   end
 
   private

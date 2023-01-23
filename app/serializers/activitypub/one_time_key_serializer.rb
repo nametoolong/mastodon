@@ -2,34 +2,16 @@
 
 class ActivityPub::OneTimeKeySerializer < ActivityPub::Serializer
   context :security
+  context_extension :olm
 
-  context_extensions :olm
+  serialize(:type) { 'Curve25519Key' }
 
-  class SignatureSerializer < ActivityPub::Serializer
-    attributes :type, :signature_value
+  serialize :keyId, from: :key_id
+  serialize :publicKeyBase64, from: :key
 
-    def type
-      'Ed25519Signature'
-    end
+  nest_in :signature do
+    serialize(:type) { 'Ed25519Signature' }
 
-    def signature_value
-      object.signature
-    end
-  end
-
-  attributes :key_id, :type, :public_key_base64
-
-  has_one :signature, serializer: SignatureSerializer
-
-  def type
-    'Curve25519Key'
-  end
-
-  def public_key_base64
-    object.key
-  end
-
-  def signature
-    object
+    serialize :signatureValue, from: :signature
   end
 end

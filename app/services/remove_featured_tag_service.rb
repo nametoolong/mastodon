@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class RemoveFeaturedTagService < BaseService
-  include Payloadable
-
   def call(account, featured_tag)
     @account = account
 
@@ -13,6 +11,6 @@ class RemoveFeaturedTagService < BaseService
   private
 
   def build_json(featured_tag)
-    Oj.dump(serialize_payload(featured_tag, ActivityPub::RemoveSerializer, signer: @account))
+    Oj.dump(ActivityPub::Renderer.new(:remove_featured_tag, featured_tag).render(signer: @account))
   end
 end

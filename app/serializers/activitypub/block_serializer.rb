@@ -1,22 +1,19 @@
 # frozen_string_literal: true
 
 class ActivityPub::BlockSerializer < ActivityPub::Serializer
-  attributes :id, :type, :actor
-  attribute :virtual_object, key: :object
+  serialize(:type) { 'Block' }
+
+  serialize :id, :actor, :object
 
   def id
-    ActivityPub::TagManager.instance.uri_for(object) || [ActivityPub::TagManager.instance.uri_for(object.account), '#blocks/', object.id].join
-  end
-
-  def type
-    'Block'
+    ActivityPub::TagManager.instance.uri_for(model) || [ActivityPub::TagManager.instance.uri_for(model.account), '#blocks/', model.id].join
   end
 
   def actor
-    ActivityPub::TagManager.instance.uri_for(object.account)
+    ActivityPub::TagManager.instance.uri_for(model.account)
   end
 
-  def virtual_object
-    ActivityPub::TagManager.instance.uri_for(object.target_account)
+  def object
+    ActivityPub::TagManager.instance.uri_for(model.target_account)
   end
 end

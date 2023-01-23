@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class AuthorizeFollowService < BaseService
-  include Payloadable
-
   def call(source_account, target_account, **options)
     if options[:skip_follow_request]
       follow_request = FollowRequest.new(account: source_account, target_account: target_account, uri: options[:follow_request_uri])
@@ -22,6 +20,6 @@ class AuthorizeFollowService < BaseService
   end
 
   def build_json(follow_request)
-    Oj.dump(serialize_payload(follow_request, ActivityPub::AcceptFollowSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:accept_follow, follow_request).render)
   end
 end

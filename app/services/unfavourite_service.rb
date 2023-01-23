@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class UnfavouriteService < BaseService
-  include Payloadable
-
   def call(account, status)
     favourite = Favourite.find_by!(account: account, status: status)
     favourite.destroy!
@@ -18,6 +16,6 @@ class UnfavouriteService < BaseService
   end
 
   def build_json(favourite)
-    Oj.dump(serialize_payload(favourite, ActivityPub::UndoLikeSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:undo_like, favourite).render)
   end
 end

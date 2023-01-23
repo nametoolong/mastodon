@@ -3,8 +3,6 @@
 require 'rubygems/package'
 
 class BackupService < BaseService
-  include Payloadable
-
   attr_reader :account, :backup, :collection
 
   def call(backup)
@@ -18,11 +16,18 @@ class BackupService < BaseService
   private
 
   def build_json!
-    @collection = serialize(collection_presenter, ActivityPub::CollectionSerializer)
+    @collection = ActivityPub::Renderer.new(:outbox,
+      ActivityPub::CollectionPresenter.new(
+        id: 'outbox.json',
+        type: :ordered,
+        size: account.statuses_count,
+        items: []
+      )
+    ).render
 
     account.statuses.with_includes.reorder(nil).find_in_batches do |statuses|
       statuses.each do |status|
-        item = serialize_payload(ActivityPub::ActivityPresenter.from_status(status), ActivityPub::ActivitySerializer, signer: @account)
+        item = ActivityPub::Renderer.new(:outbox, status).render(signer: @account)
         item.delete(:'@context')
 
         unless item[:type] == 'Announce' || item[:object][:attachment].blank?
@@ -84,7 +89,7 @@ class BackupService < BaseService
   end
 
   def dump_actor!(tar)
-    actor = serialize(account, ActivityPub::ActorSerializer)
+    actor = ActivityPub::Renderer.new(:actor, account).render
 
     actor[:icon][:url]  = 'avatar' + File.extname(actor[:icon][:url])  if actor[:icon]
     actor[:image][:url] = 'header' + File.extname(actor[:image][:url]) if actor[:image]
@@ -103,7 +108,14 @@ class BackupService < BaseService
   end
 
   def dump_likes!(tar)
-    collection = serialize(ActivityPub::CollectionPresenter.new(id: 'likes.json', type: :ordered, size: 0, items: []), ActivityPub::CollectionSerializer)
+    collection = ActivityPub::Renderer.new(:outbox,
+      ActivityPub::CollectionPresenter.new(
+        id: 'likes.json',
+        type: :ordered,
+        size: 0,
+        items: []
+      )
+    ).render
 
     Status.reorder(nil).joins(:favourites).includes(:account).merge(account.favourites).find_in_batches do |statuses|
       statuses.each do |status|
@@ -122,7 +134,14 @@ class BackupService < BaseService
   end
 
   def dump_bookmarks!(tar)
-    collection = serialize(ActivityPub::CollectionPresenter.new(id: 'bookmarks.json', type: :ordered, size: 0, items: []), ActivityPub::CollectionSerializer)
+    collection = ActivityPub::Renderer.new(:outbox,
+      ActivityPub::CollectionPresenter.new(
+        id: 'bookmarks.json',
+        type: :ordered,
+        size: 0,
+        items: []
+      )
+    ).render
 
     Status.reorder(nil).joins(:bookmarks).includes(:account).merge(account.bookmarks).find_in_batches do |statuses|
       statuses.each do |status|
@@ -138,23 +157,6 @@ class BackupService < BaseService
     tar.add_file_simple('bookmarks.json', 0o444, json.bytesize) do |io|
       io.write(json)
     end
-  end
-
-  def collection_presenter
-    ActivityPub::CollectionPresenter.new(
-      id: 'outbox.json',
-      type: :ordered,
-      size: account.statuses_count,
-      items: []
-    )
-  end
-
-  def serialize(object, serializer)
-    ActiveModelSerializers::SerializableResource.new(
-      object,
-      serializer: serializer,
-      adapter: ActivityPub::Adapter
-    ).as_json
   end
 
   CHUNK_SIZE = 1.megabyte

@@ -2,7 +2,6 @@
 
 class FollowService < BaseService
   include Redisable
-  include Payloadable
   include DomainControlHelper
 
   # Follow a remote user, notify remote user about the follow
@@ -87,7 +86,7 @@ class FollowService < BaseService
   end
 
   def build_json(follow_request)
-    Oj.dump(serialize_payload(follow_request, ActivityPub::FollowSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:follow, follow_request).render)
   end
 
   def follow_options

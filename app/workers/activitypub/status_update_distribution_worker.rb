@@ -15,15 +15,7 @@ class ActivityPub::StatusUpdateDistributionWorker < ActivityPub::DistributionWor
 
   protected
 
-  def activity
-    ActivityPub::ActivityPresenter.new(
-      id: [ActivityPub::TagManager.instance.uri_for(@status), '#updates/', @status.edited_at.to_i].join,
-      type: 'Update',
-      actor: ActivityPub::TagManager.instance.uri_for(@status.account),
-      published: @status.edited_at,
-      to: ActivityPub::TagManager.instance.to(@status),
-      cc: ActivityPub::TagManager.instance.cc(@status),
-      virtual_object: @status
-    )
+  def payload
+    @payload ||= Oj.dump(ActivityPub::Renderer.new(:update_note, @status).render(signer: @account))
   end
 end

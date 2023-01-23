@@ -139,6 +139,9 @@ GEM
       bundler (>= 1.2.0, < 3)
       thor (~> 1.0)
     byebug (11.1.3)
+    cache_crispies (1.4.0)
+      oj (~> 3.7)
+      railties (>= 5.0.0, < 8.0)
     capistrano (3.17.1)
       airbrussh (>= 1.0.0)
       i18n
@@ -776,6 +779,7 @@ DEPENDENCIES
   bson (~> 4.15.0)
   bullet (~> 7.0)
   bundler-audit (~> 0.9)
+  cache_crispies (~> 1.4.0)
   capistrano (~> 3.17)
   capistrano-rails (~> 1.6)
   capistrano-rbenv (~> 2.2)

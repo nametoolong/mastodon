@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class RemoveFromFollowersService < BaseService
-  include Payloadable
-
   def call(source_account, target_accounts)
     source_account.passive_relationships.where(account_id: target_accounts).find_each do |follow|
       follow.destroy
@@ -20,6 +18,6 @@ class RemoveFromFollowersService < BaseService
   end
 
   def build_json(follow)
-    Oj.dump(serialize_payload(follow, ActivityPub::RejectFollowSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:reject_follow, follow).render)
   end
 end

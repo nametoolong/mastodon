@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class UnsuspendAccountService < BaseService
-  include Payloadable
-
   # Restores a recently-unsuspended account
   # @param [Account] account Account to restore
   def call(account)
@@ -98,6 +96,6 @@ class UnsuspendAccountService < BaseService
   end
 
   def signed_activity_json
-    @signed_activity_json ||= Oj.dump(serialize_payload(@account, ActivityPub::UpdateSerializer, signer: @account))
+    @signed_activity_json ||= Oj.dump(ActivityPub::Renderer.new(:update_actor, @account).render(signer: @account))
   end
 end

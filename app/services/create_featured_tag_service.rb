@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class CreateFeaturedTagService < BaseService
-  include Payloadable
-
   def call(account, name, force: true)
     @account = account
 
@@ -20,6 +18,6 @@ class CreateFeaturedTagService < BaseService
   private
 
   def build_json(featured_tag)
-    Oj.dump(serialize_payload(featured_tag, ActivityPub::AddSerializer, signer: @account))
+    Oj.dump(ActivityPub::Renderer.new(:add_featured_tag, featured_tag).render(signer: @account))
   end
 end

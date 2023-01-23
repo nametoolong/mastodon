@@ -25,11 +25,7 @@ class FollowingAccountsController < ApplicationController
 
         expires_in(page_requested? ? 0 : 3.minutes, public: public_fetch_mode?)
 
-        render json: collection_presenter,
-               serializer: ActivityPub::CollectionSerializer,
-               adapter: ActivityPub::Adapter,
-               content_type: 'application/activity+json',
-               fields: restrict_fields_to
+        render json: ActivityPub::Renderer.new(:actor, collection_presenter).render, content_type: 'application/activity+json'
       end
     end
   end
@@ -61,7 +57,12 @@ class FollowingAccountsController < ApplicationController
   end
 
   def collection_presenter
-    if page_requested?
+    if @account.hide_collections?
+      ActivityPub::CollectionPresenter.new(
+        type: :unordered,
+        size: @account.following_count
+      )
+    elsif page_requested?
       ActivityPub::CollectionPresenter.new(
         id: account_following_index_url(@account, page: params.fetch(:page, 1)),
         type: :ordered,
@@ -78,14 +79,6 @@ class FollowingAccountsController < ApplicationController
         size: @account.following_count,
         first: page_url(1)
       )
-    end
-  end
-
-  def restrict_fields_to
-    if page_requested? || !@account.hide_collections?
-      # Return all fields
-    else
-      %i(id type total_items)
     end
   end
 end

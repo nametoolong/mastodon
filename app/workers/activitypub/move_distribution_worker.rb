@@ -2,7 +2,6 @@
 
 class ActivityPub::MoveDistributionWorker
   include Sidekiq::Worker
-  include Payloadable
 
   sidekiq_options queue: 'push'
 
@@ -28,6 +27,6 @@ class ActivityPub::MoveDistributionWorker
   end
 
   def signed_payload
-    @signed_payload ||= Oj.dump(serialize_payload(@migration, ActivityPub::MoveSerializer, signer: @account))
+    @signed_payload ||= Oj.dump(ActivityPub::Renderer.new(:move, @migration).render(signer: @account))
   end
 end

@@ -1,22 +1,19 @@
 # frozen_string_literal: true
 
 class ActivityPub::LikeSerializer < ActivityPub::Serializer
-  attributes :id, :type, :actor
-  attribute :virtual_object, key: :object
+  serialize(:type) { 'Like' }
+
+  serialize :id, :actor, :object
 
   def id
-    [ActivityPub::TagManager.instance.uri_for(object.account), '#likes/', object.id].join
-  end
-
-  def type
-    'Like'
+    [ActivityPub::TagManager.instance.uri_for(model.account), '#likes/', model.id].join
   end
 
   def actor
-    ActivityPub::TagManager.instance.uri_for(object.account)
+    ActivityPub::TagManager.instance.uri_for(model.account)
   end
 
-  def virtual_object
-    ActivityPub::TagManager.instance.uri_for(object.status)
+  def object
+    ActivityPub::TagManager.instance.uri_for(model.status)
   end
 end

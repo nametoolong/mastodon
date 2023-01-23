@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 class DeliverToDeviceService < BaseService
-  include Payloadable
-
-  class EncryptedMessage < ActiveModelSerializers::Model
-    attributes :source_account, :target_account, :source_device,
-               :target_device_id, :type, :body, :digest,
-               :message_franking
-  end
+  EncryptedMessage = Struct.new(
+    :source_account, :target_account, :source_device,
+    :target_device_id, :type, :body, :digest,
+    :message_franking,
+    keyword_init: true
+  )
 
   def call(source_account, source_device, options = {})
     @source_account   = source_account
@@ -48,7 +47,7 @@ class DeliverToDeviceService < BaseService
 
   def deliver_to_remote!
     ActivityPub::DeliveryWorker.perform_async(
-      Oj.dump(serialize_payload(ActivityPub::ActivityPresenter.from_encrypted_message(encrypted_message), ActivityPub::ActivitySerializer)),
+      Oj.dump(ActivityPub::Renderer.new(:create_encrypted_message, encrypted_message).render),
       @source_account.id,
       @target_account.inbox_url
     )

@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class BlockService < BaseService
-  include Payloadable
-
   def call(account, target_account)
     return if account.id == target_account.id
 
@@ -24,6 +22,6 @@ class BlockService < BaseService
   end
 
   def build_json(block)
-    Oj.dump(serialize_payload(block, ActivityPub::BlockSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:block, block).render)
   end
 end

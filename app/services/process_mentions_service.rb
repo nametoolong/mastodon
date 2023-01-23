@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class ProcessMentionsService < BaseService
-  include Payloadable
-
   # Scan status for mentions and fetch remote mentioned users, create
   # local mention pointers, send Salmon notifications to mentioned
   # remote users

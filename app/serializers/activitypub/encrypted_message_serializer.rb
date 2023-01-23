@@ -2,60 +2,33 @@
 
 class ActivityPub::EncryptedMessageSerializer < ActivityPub::Serializer
   context :security
+  context_extension :olm
 
-  context_extensions :olm
+  serialize(:type) { 'EncryptedMessage' }
 
-  class DeviceSerializer < ActivityPub::Serializer
-    attributes :type, :device_id
+  serialize :cipherText, from: :body
+  serialize :messageType, from: :type
+  serialize :messageFranking, from: :message_franking
 
-    def type
-      'Device'
-    end
+  nest_in :digest do
+    serialize(:type) { 'Digest' }
 
-    def device_id
-      object
-    end
-  end
+    serialize :digestValue, from: :digest
 
-  class DigestSerializer < ActivityPub::Serializer
-    attributes :type, :digest_algorithm, :digest_value
-
-    def type
-      'Digest'
-    end
-
-    def digest_algorithm
+    serialize :digestAlgorithm do
       'http://www.w3.org/2000/09/xmldsig#hmac-sha256'
     end
-
-    def digest_value
-      object
-    end
   end
 
-  attributes :type, :message_type, :cipher_text, :message_franking
+  nest_in :attributedTo do
+    serialize(:type) { 'Device' }
 
-  has_one :attributed_to, serializer: DeviceSerializer
-  has_one :to, serializer: DeviceSerializer
-  has_one :digest, serializer: DigestSerializer
-
-  def type
-    'EncryptedMessage'
+    serialize :deviceId, from: :device_id, through: :source_device
   end
 
-  def attributed_to
-    object.source_device.device_id
-  end
+  nest_in :to do
+    serialize(:type) { 'Device' }
 
-  def to
-    object.target_device_id
-  end
-
-  def message_type
-    object.type
-  end
-
-  def cipher_text
-    object.body
+    serialize :deviceId, from: :target_device_id
   end
 end

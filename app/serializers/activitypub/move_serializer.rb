@@ -1,26 +1,23 @@
 # frozen_string_literal: true
 
 class ActivityPub::MoveSerializer < ActivityPub::Serializer
-  attributes :id, :type, :target, :actor
-  attribute :virtual_object, key: :object
+  serialize(:type) { 'Move' }
+
+  serialize :id, :target, :actor, :object
 
   def id
-    [ActivityPub::TagManager.instance.uri_for(object.account), '#moves/', object.id].join
-  end
-
-  def type
-    'Move'
+    [ActivityPub::TagManager.instance.uri_for(model.account), '#moves/', model.id].join
   end
 
   def target
-    ActivityPub::TagManager.instance.uri_for(object.target_account)
-  end
-
-  def virtual_object
-    ActivityPub::TagManager.instance.uri_for(object.account)
+    ActivityPub::TagManager.instance.uri_for(model.target_account)
   end
 
   def actor
-    ActivityPub::TagManager.instance.uri_for(object.account)
+    ActivityPub::TagManager.instance.uri_for(model.account)
+  end
+
+  def object
+    ActivityPub::TagManager.instance.uri_for(model.account)
   end
 end

@@ -3,28 +3,26 @@
 class ActivityPub::ImageSerializer < ActivityPub::Serializer
   include RoutingHelper
 
-  context_extensions :focal_point
+  context_extension :focal_point
 
-  attributes :type, :media_type, :url
-  attribute :focal_point, if: :focal_point?
+  serialize(:type) { 'Image' }
 
-  def type
-    'Image'
+  serialize :url
+  serialize :mediaType, from: :content_type
+
+  show_if :focal_point? do
+    serialize :focalPoint, from: :focal_point
   end
 
   def url
-    full_asset_url(object.url(:original))
-  end
-
-  def media_type
-    object.content_type
+    full_asset_url(model.url(:original))
   end
 
   def focal_point?
-    object.respond_to?(:meta) && object.meta.is_a?(Hash) && object.meta['focus'].is_a?(Hash)
+    model.respond_to?(:meta) && model.meta.is_a?(Hash) && model.meta['focus'].is_a?(Hash)
   end
 
   def focal_point
-    [object.meta['focus']['x'], object.meta['focus']['y']]
+    [model.meta['focus']['x'], model.meta['focus']['y']]
   end
 end

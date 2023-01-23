@@ -1,43 +1,57 @@
 # frozen_string_literal: true
 
 class ActivityPub::CollectionSerializer < ActivityPub::Serializer
-  class StringSerializer < ActiveModel::Serializer
-    # Despite the name, it does not return a hash, but the same can be said of
-    # the ActiveModel::Serializer::CollectionSerializer class which handles
-    # arrays.
-    def serializable_hash(*_args)
-      object
+  serialize :type
+
+  show_if ->(model) { model.id.present? } do
+    serialize :id
+  end
+
+  show_if ->(model) { model.size.present? } do
+    serialize :totalItems, from: :size
+  end
+
+  show_if ->(model) { model.next.present? } do
+    serialize :next
+  end
+
+  show_if ->(model) { model.prev.present? } do
+    serialize :prev
+  end
+
+  show_if ->(model) { model.part_of.present? } do
+    serialize :partOf, from: :part_of
+  end
+
+  show_if ->(model) { model.first.present? } do
+    show_if ->(model) { model.first.is_a?(ActivityPub::CollectionPresenter) } do
+      serialize :first, with: ActivityPub::CollectionSerializer, collection: false
+    end
+
+    show_if ->(model) { !model.first.is_a?(ActivityPub::CollectionPresenter) } do
+      serialize :first
     end
   end
 
-  def self.serializer_for(model, options)
-    case model.class.name
-    when 'Status'
-      ActivityPub::NoteSerializer
-    when 'Device'
-      ActivityPub::DeviceSerializer
-    when 'FeaturedTag'
-      ActivityPub::HashtagSerializer
-    when 'ActivityPub::CollectionPresenter'
-      ActivityPub::CollectionSerializer
-    when 'String'
-      StringSerializer
-    else
-      super
+  show_if ->(model) { model.last.present? } do
+    show_if ->(model) { model.last.is_a?(ActivityPub::CollectionPresenter) } do
+      serialize :last, with: ActivityPub::CollectionSerializer, collection: false
+    end
+
+    show_if ->(model) { !model.last.is_a?(ActivityPub::CollectionPresenter) } do
+      serialize :last
     end
   end
 
-  attribute :id, if: -> { object.id.present? }
-  attribute :type
-  attribute :total_items, if: -> { object.size.present? }
-  attribute :next, if: -> { object.next.present? }
-  attribute :prev, if: -> { object.prev.present? }
-  attribute :part_of, if: -> { object.part_of.present? }
+  show_if :has_item? do
+    show_if :ordered? do
+      serialize :orderedItems, from: :items
+    end
 
-  has_one :first, if: -> { object.first.present? }
-  has_one :last, if: -> { object.last.present? }
-  has_many :items, key: :items, if: -> { (!object.items.nil? || page?) && !ordered? }
-  has_many :items, key: :ordered_items, if: -> { (!object.items.nil? || page?) && ordered? }
+    show_if :unordered? do
+      serialize :items
+    end
+  end
 
   def type
     if page?
@@ -47,17 +61,19 @@ class ActivityPub::CollectionSerializer < ActivityPub::Serializer
     end
   end
 
-  def total_items
-    object.size
+  def ordered?
+    model.type == :ordered
   end
 
-  private
-
-  def ordered?
-    object.type == :ordered
+  def unordered?
+    !ordered?
   end
 
   def page?
-    object.part_of.present? || object.page.present?
+    model.part_of.present? || model.page.present?
+  end
+
+  def has_item?
+    !model.items.nil? || page?
   end
 end

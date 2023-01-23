@@ -5,197 +5,148 @@ class ActivityPub::ActorSerializer < ActivityPub::Serializer
   include FormattingHelper
 
   context :security
+  context_extension :manually_approves_followers, :featured, :also_known_as,
+                    :moved_to, :property_value, :discoverable, :olm, :suspended,
+                    :hashtag
 
-  context_extensions :manually_approves_followers, :featured, :also_known_as,
-                     :moved_to, :property_value, :discoverable, :olm, :suspended
+  use_contexts_from ActivityPub::EmojiSerializer
 
-  attributes :id, :type, :following, :followers,
-             :inbox, :outbox, :featured, :featured_tags,
-             :preferred_username, :name, :summary,
-             :url, :manually_approves_followers,
-             :discoverable, :published
-
-  has_one :public_key, serializer: ActivityPub::PublicKeySerializer
-
-  has_many :virtual_tags, key: :tag
-  has_many :virtual_attachments, key: :attachment
-
-  attribute :devices, unless: :instance_actor?
-  attribute :moved_to, if: :moved?
-  attribute :also_known_as, if: :also_known_as?
-  attribute :suspended, if: :suspended?
-
-  class EndpointsSerializer < ActivityPub::Serializer
-    include RoutingHelper
-
-    attributes :shared_inbox
-
-    def shared_inbox
-      inbox_url
-    end
-  end
-
-  has_one :endpoints, serializer: EndpointsSerializer
-
-  has_one :icon,  serializer: ActivityPub::ImageSerializer, if: :avatar_exists?
-  has_one :image, serializer: ActivityPub::ImageSerializer, if: :header_exists?
-
-  delegate :suspended?, :instance_actor?, to: :object
-
-  def id
-    object.instance_actor? ? instance_actor_url : account_url(object)
-  end
-
-  def type
-    if object.instance_actor?
+  serialize :type do |model|
+    if model.instance_actor?
       'Application'
-    elsif object.bot?
+    elsif model.bot?
       'Service'
-    elsif object.group?
+    elsif model.group?
       'Group'
     else
       'Person'
     end
   end
 
+  serialize :id, :inbox, :outbox, :name,
+            :summary, :url, :discoverable, :published
+
+  serialize :preferredUsername, from: :username
+  serialize :manuallyApprovesFollowers, from: :manually_approves_followers
+
+  serialize :publicKey, from: :itself, with: ActivityPub::PublicKeySerializer
+
+  nest_in :endpoints do
+    serialize :sharedInbox, from: :shared_inbox
+  end
+
+  show_if ->(model) { model.suspended? } do
+    serialize :suspended, from: :suspended?
+  end
+
+  show_if ->(model) { !(model.instance_actor? || model.suspended?) } do
+    serialize :following, :followers, :devices, :featured
+    serialize :featuredTags, from: :featured_tags
+
+    serialize :attachment, :tag
+
+    show_if ->(model) { model.moved? } do
+      serialize :movedTo, from: :moved_to
+    end
+
+    show_if ->(model) { !model.also_known_as.empty? } do
+      serialize :alsoKnownAs, from: :also_known_as
+    end
+
+    show_if ->(model) { model.avatar? } do
+      serialize :icon, from: :avatar, with: ActivityPub::ImageSerializer
+    end
+
+    show_if ->(model) { model.header? } do
+      serialize :image, from: :header, with: ActivityPub::ImageSerializer
+    end
+  end
+
+  def id
+    model.instance_actor? ? instance_actor_url : account_url(model)
+  end
+
   def following
-    account_following_index_url(object)
+    account_following_index_url(model)
   end
 
   def followers
-    account_followers_url(object)
+    account_followers_url(model)
   end
 
   def inbox
-    object.instance_actor? ? instance_actor_inbox_url : account_inbox_url(object)
-  end
-
-  def devices
-    account_collection_url(object, :devices)
+    model.instance_actor? ? instance_actor_inbox_url : account_inbox_url(model)
   end
 
   def outbox
-    object.instance_actor? ? instance_actor_outbox_url : account_outbox_url(object)
+    model.instance_actor? ? instance_actor_outbox_url : account_outbox_url(model)
+  end
+
+  def shared_inbox
+    inbox_url
+  end
+
+  def devices
+    account_collection_url(model, :devices)
   end
 
   def featured
-    account_collection_url(object, :featured)
+    account_collection_url(model, :featured)
   end
 
   def featured_tags
-    account_collection_url(object, :tags)
-  end
-
-  def endpoints
-    object
-  end
-
-  def preferred_username
-    object.username
+    account_collection_url(model, :tags)
   end
 
   def discoverable
-    object.suspended? ? false : (object.discoverable || false)
+    model.suspended? ? false : (model.discoverable || false)
   end
 
   def name
-    object.suspended? ? '' : object.display_name
+    model.suspended? ? '' : model.display_name
   end
 
   def summary
-    object.suspended? ? '' : account_bio_format(object)
-  end
-
-  def icon
-    object.avatar
-  end
-
-  def image
-    object.header
-  end
-
-  def public_key
-    object
-  end
-
-  def suspended
-    object.suspended?
+    model.suspended? ? '' : account_bio_format(model)
   end
 
   def url
-    object.instance_actor? ? about_more_url(instance_actor: true) : short_account_url(object)
-  end
-
-  def avatar_exists?
-    !object.suspended? && object.avatar?
-  end
-
-  def header_exists?
-    !object.suspended? && object.header?
-  end
-
-  def manually_approves_followers
-    object.suspended? ? false : object.locked
-  end
-
-  def virtual_tags
-    object.suspended? ? [] : (object.emojis + object.tags)
-  end
-
-  def virtual_attachments
-    object.suspended? ? [] : object.fields
-  end
-
-  def moved_to
-    ActivityPub::TagManager.instance.uri_for(object.moved_to_account)
-  end
-
-  def moved?
-    !object.suspended? && object.moved?
-  end
-
-  def also_known_as?
-    !object.suspended? && !object.also_known_as.empty?
+    model.instance_actor? ? about_more_url(instance_actor: true) : short_account_url(model)
   end
 
   def published
-    object.created_at.midnight.iso8601
+    model.created_at.midnight.iso8601
   end
 
-  class CustomEmojiSerializer < ActivityPub::EmojiSerializer
+  def manually_approves_followers
+    model.suspended? ? false : model.locked
   end
 
-  class TagSerializer < ActivityPub::Serializer
-    context_extensions :hashtag
+  def moved_to
+    ActivityPub::TagManager.instance.uri_for(model.moved_to_account)
+  end
 
-    include RoutingHelper
-
-    attributes :type, :href, :name
-
-    def type
-      'Hashtag'
-    end
-
-    def href
-      tag_url(object)
-    end
-
-    def name
-      "##{object.name}"
+  def attachment
+    model.fields.map do |field|
+      {
+        type: 'PropertyValue',
+        name: field.name,
+        value: account_field_value_format(field)
+      }
     end
   end
 
-  class Account::FieldSerializer < ActivityPub::Serializer
-    include FormattingHelper
+  def tag
+    emojis = CacheCrispies::Collection.new(model.emojis, ActivityPub::EmojiSerializer).as_json
 
-    attributes :type, :name, :value
-
-    def type
-      'PropertyValue'
+    tags = model.tags.map do |tag|
+      {
+         type: 'Hashtag',
+         href: tag_url(tag),
+         name: "##{tag.name}"
+      }
     end
 
-    def value
-      account_field_value_format(object)
-    end
+    [emojis + tags].tap(&:flatten!)
   end
 end

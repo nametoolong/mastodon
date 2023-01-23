@@ -2,7 +2,6 @@
 
 class Account::Field
   include ActiveModel::Model
-  include ActiveModel::Serialization
 
   MAX_CHARACTERS_LOCAL  = 255
   MAX_CHARACTERS_COMPAT = 2_047

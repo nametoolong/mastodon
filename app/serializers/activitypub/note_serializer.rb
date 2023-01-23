@@ -2,307 +2,244 @@
 
 class ActivityPub::NoteSerializer < ActivityPub::Serializer
   include FormattingHelper
+  include RoutingHelper
 
-  context_extensions :atom_uri, :conversation, :sensitive, :voters_count
+  context_extension :atom_uri, :conversation, :hashtag, :sensitive, :voters_count
 
-  attributes :id, :type, :summary,
-             :in_reply_to, :published, :url,
-             :attributed_to, :to, :cc, :sensitive,
-             :atom_uri, :in_reply_to_atom_uri,
-             :conversation
+  use_contexts_from ActivityPub::EmojiSerializer
 
-  attribute :content
-  attribute :content_map, if: :language?
-  attribute :updated, if: :edited?
+  class MediaAttachmentSerializer < ActivityPub::Serializer
+    include RoutingHelper
 
-  has_many :virtual_attachments, key: :attachment
-  has_many :virtual_tags, key: :tag
+    context_extension :blurhash, :focal_point
 
-  has_one :replies, serializer: ActivityPub::CollectionSerializer, if: :local?
+    serialize(:type) { 'Document' }
 
-  has_many :poll_options, key: :one_of, if: :poll_and_not_multiple?
-  has_many :poll_options, key: :any_of, if: :poll_and_multiple?
+    serialize :url, :blurhash, :width, :height
+    serialize :name, from: :description
+    serialize :mediaType, from: :file_content_type
 
-  attribute :end_time, if: :poll_and_expires?
-  attribute :closed, if: :poll_and_expired?
+    show_if :focal_point? do
+      serialize :focalPoint, from: :focal_point
+    end
 
-  attribute :voters_count, if: :poll_and_voters_count?
+    show_if ->(model) { model.thumbnail.present? } do
+      serialize :icon, from: :thumbnail, with: ActivityPub::ImageSerializer
+    end
 
-  def id
-    ActivityPub::TagManager.instance.uri_for(object)
+    def url
+      model.local? ? full_asset_url(model.file.url(:original, false)) : model.remote_url
+    end
+
+    def focal_point?
+      model.file.meta.is_a?(Hash) && model.file.meta['focus'].is_a?(Hash)
+    end
+
+    def focal_point
+      [model.file.meta['focus']['x'], model.file.meta['focus']['y']]
+    end
+
+    def width
+      model.file.meta&.dig('original', 'width')
+    end
+
+    def height
+      model.file.meta&.dig('original', 'height')
+    end
   end
 
-  def type
-    object.preloadable_poll ? 'Question' : 'Note'
+  class OptionSerializer < ActivityPub::Serializer
+    serialize(:type) { 'Note' }
+
+    serialize :name, from: :title
+
+    nest_in :replies do
+      serialize(:type) { 'Collection' }
+
+      serialize :totalItems, from: :votes_count
+    end
+  end
+
+  serialize :type do |model|
+    model.preloadable_poll ? 'Question' : 'Note'
+  end
+
+  serialize :id, :summary, :content, :published,
+            :url, :to, :cc, :sensitive
+
+  serialize :attributedTo, from: :attributed_to
+
+  serialize :attachment, from: :ordered_media_attachments, with: MediaAttachmentSerializer
+
+  serialize :tag
+
+  show_if ->(model) { model.language.present? } do
+    serialize :contentMap, from: :content_map
+  end
+
+  show_if ->(model) { model.edited? } do
+    serialize :updated
+  end
+
+  show_if ->(model) { model.reply? && !model.thread.nil? } do
+    serialize :inReplyTo, from: :in_reply_to
+    serialize :inReplyToAtomUri, from: :in_reply_to_atom_uri
+  end
+
+  show_if ->(model) { model.account.local? } do
+    serialize :atomUri, from: :atom_uri
+
+    serialize :replies, with: ActivityPub::CollectionSerializer, collection: false
+  end
+
+  show_if ->(model) { model.conversation } do
+    serialize :conversation
+  end
+
+  show_if ->(model) { model.preloadable_poll&.multiple? } do
+    # Multiple options
+    serialize :anyOf, from: :poll_options, with: OptionSerializer
+  end
+
+  show_if ->(model) { model.preloadable_poll && !model.preloadable_poll.multiple? } do
+    # Single option
+    serialize :oneOf, from: :poll_options, with: OptionSerializer
+  end
+
+  show_if ->(model) { model.preloadable_poll&.expires_at&.present? } do
+    serialize :endTime, from: :end_time
+  end
+
+  show_if ->(model) { model.preloadable_poll&.expired? } do
+    serialize :closed, from: :end_time
+  end
+
+  show_if ->(model) { model.preloadable_poll&.voters_count } do
+    serialize :votersCount, from: :voters_count
+  end
+
+  def id
+    ActivityPub::TagManager.instance.uri_for(model)
   end
 
   def summary
-    object.spoiler_text.presence
+    model.spoiler_text.presence
   end
 
   def content
-    status_content_format(object)
+    @content ||= status_content_format(model)
   end
 
   def content_map
-    { object.language => content }
+    { model.language => content }
   end
-
-  def replies
-    replies = object.self_replies(5).pluck(:id, :uri)
-    last_id = replies.last&.first
-
-    ActivityPub::CollectionPresenter.new(
-      type: :unordered,
-      id: ActivityPub::TagManager.instance.replies_uri_for(object),
-      first: ActivityPub::CollectionPresenter.new(
-        type: :unordered,
-        part_of: ActivityPub::TagManager.instance.replies_uri_for(object),
-        items: replies.map(&:second),
-        next: last_id ? ActivityPub::TagManager.instance.replies_uri_for(object, page: true, min_id: last_id) : ActivityPub::TagManager.instance.replies_uri_for(object, page: true, only_other_accounts: true)
-      )
-    )
-  end
-
-  def language?
-    object.language.present?
-  end
-
-  delegate :edited?, to: :object
 
   def in_reply_to
-    return unless object.reply? && !object.thread.nil?
-
-    if object.thread.uri.nil? || object.thread.uri.start_with?('http')
-      ActivityPub::TagManager.instance.uri_for(object.thread)
+    if model.thread.uri.nil? || model.thread.uri.start_with?('http')
+      ActivityPub::TagManager.instance.uri_for(model.thread)
     else
-      object.thread.url
+      model.thread.url
     end
   end
 
   def published
-    object.created_at.iso8601
+    model.created_at.iso8601
   end
 
   def updated
-    object.edited_at.iso8601
+    model.edited_at.iso8601
   end
 
   def url
-    ActivityPub::TagManager.instance.url_for(object)
+    ActivityPub::TagManager.instance.url_for(model)
   end
 
   def attributed_to
-    ActivityPub::TagManager.instance.uri_for(object.account)
+    ActivityPub::TagManager.instance.uri_for(model.account)
   end
 
   def to
-    ActivityPub::TagManager.instance.to(object)
+    ActivityPub::TagManager.instance.to(model)
   end
 
   def cc
-    ActivityPub::TagManager.instance.cc(object)
+    ActivityPub::TagManager.instance.cc(model)
   end
 
   def sensitive
-    object.account.sensitized? || object.sensitive
+    model.account.sensitized? || model.sensitive
   end
 
-  def virtual_attachments
-    object.ordered_media_attachments
-  end
+  def tag
+    mentions = model.active_mentions.to_a.sort_by!(&:id).map! do |mention|
+      {
+         type: 'Mention',
+         href: ActivityPub::TagManager.instance.uri_for(mention.account),
+         name: "@#{mention.account.acct}"
+      }
+    end
 
-  def virtual_tags
-    object.active_mentions.to_a.sort_by(&:id) + object.tags + object.emojis
+    tags = model.tags.map do |tag|
+      {
+         type: 'Hashtag',
+         href: tag_url(tag),
+         name: "##{tag.name}"
+      }
+    end
+
+    emojis = CacheCrispies::Collection.new(model.emojis, ActivityPub::EmojiSerializer).as_json
+
+    [mentions, tags, emojis].tap(&:flatten!)
   end
 
   def atom_uri
-    return unless object.local?
-
-    OStatus::TagManager.instance.uri_for(object)
+    OStatus::TagManager.instance.uri_for(model)
   end
 
   def in_reply_to_atom_uri
-    return unless object.reply? && !object.thread.nil?
-
-    OStatus::TagManager.instance.uri_for(object.thread)
+    OStatus::TagManager.instance.uri_for(model.thread)
   end
 
   def conversation
-    return if object.conversation.nil?
-
-    if object.conversation.uri?
-      object.conversation.uri
+    if model.conversation.uri?
+      model.conversation.uri
     else
-      OStatus::TagManager.instance.unique_tag(object.conversation.created_at, object.conversation.id, 'Conversation')
+      OStatus::TagManager.instance.unique_tag(model.conversation.created_at, model.conversation.id, 'Conversation')
     end
   end
 
-  def local?
-    object.account.local?
+  def replies
+    replies = model.self_replies(5).pluck(:id, :uri)
+    last_id = replies.last&.first
+    next_page = begin
+      if last_id
+        ActivityPub::TagManager.instance.replies_uri_for(model, page: true, min_id: last_id)
+      else
+        ActivityPub::TagManager.instance.replies_uri_for(model, page: true, only_other_accounts: true)
+      end
+    end
+
+    ActivityPub::CollectionPresenter.new(
+      type: :unordered,
+      id: ActivityPub::TagManager.instance.replies_uri_for(model),
+      first: ActivityPub::CollectionPresenter.new(
+        type: :unordered,
+        part_of: ActivityPub::TagManager.instance.replies_uri_for(model),
+        items: replies.map(&:second),
+        next: next_page
+      )
+    )
   end
 
   def poll_options
-    object.preloadable_poll.loaded_options
+    model.preloadable_poll.loaded_options
   end
 
-  def poll_and_multiple?
-    object.preloadable_poll&.multiple?
+  def end_time
+    model.preloadable_poll.expires_at.iso8601
   end
-
-  def poll_and_not_multiple?
-    object.preloadable_poll && !object.preloadable_poll.multiple?
-  end
-
-  def closed
-    object.preloadable_poll.expires_at.iso8601
-  end
-
-  alias end_time closed
 
   def voters_count
-    object.preloadable_poll.voters_count
-  end
-
-  def poll_and_expires?
-    object.preloadable_poll&.expires_at&.present?
-  end
-
-  def poll_and_expired?
-    object.preloadable_poll&.expired?
-  end
-
-  def poll_and_voters_count?
-    object.preloadable_poll&.voters_count
-  end
-
-  class MediaAttachmentSerializer < ActivityPub::Serializer
-    context_extensions :blurhash, :focal_point
-
-    include RoutingHelper
-
-    attributes :type, :media_type, :url, :name, :blurhash
-    attribute :focal_point, if: :focal_point?
-    attribute :width, if: :width?
-    attribute :height, if: :height?
-
-    has_one :icon, serializer: ActivityPub::ImageSerializer, if: :thumbnail?
-
-    def type
-      'Document'
-    end
-
-    def name
-      object.description
-    end
-
-    def media_type
-      object.file_content_type
-    end
-
-    def url
-      object.local? ? full_asset_url(object.file.url(:original, false)) : object.remote_url
-    end
-
-    def focal_point?
-      object.file.meta.is_a?(Hash) && object.file.meta['focus'].is_a?(Hash)
-    end
-
-    def focal_point
-      [object.file.meta['focus']['x'], object.file.meta['focus']['y']]
-    end
-
-    def icon
-      object.thumbnail
-    end
-
-    def thumbnail?
-      object.thumbnail.present?
-    end
-
-    def width?
-      object.file.meta&.dig('original', 'width').present?
-    end
-
-    def height?
-      object.file.meta&.dig('original', 'height').present?
-    end
-
-    def width
-      object.file.meta.dig('original', 'width')
-    end
-
-    def height
-      object.file.meta.dig('original', 'height')
-    end
-  end
-
-  class MentionSerializer < ActivityPub::Serializer
-    attributes :type, :href, :name
-
-    def type
-      'Mention'
-    end
-
-    def href
-      ActivityPub::TagManager.instance.uri_for(object.account)
-    end
-
-    def name
-      "@#{object.account.acct}"
-    end
-  end
-
-  class TagSerializer < ActivityPub::Serializer
-    context_extensions :hashtag
-
-    include RoutingHelper
-
-    attributes :type, :href, :name
-
-    def type
-      'Hashtag'
-    end
-
-    def href
-      tag_url(object)
-    end
-
-    def name
-      "##{object.name}"
-    end
-  end
-
-  class CustomEmojiSerializer < ActivityPub::EmojiSerializer
-  end
-
-  class OptionSerializer < ActivityPub::Serializer
-    class RepliesSerializer < ActivityPub::Serializer
-      attributes :type, :total_items
-
-      def type
-        'Collection'
-      end
-
-      def total_items
-        object.votes_count
-      end
-    end
-
-    attributes :type, :name
-
-    has_one :replies, serializer: ActivityPub::NoteSerializer::OptionSerializer::RepliesSerializer
-
-    def type
-      'Note'
-    end
-
-    def name
-      object.title
-    end
-
-    def replies
-      object
-    end
+    model.preloadable_poll.voters_count
   end
 end

@@ -2,7 +2,6 @@
 
 class VoteService < BaseService
   include Authorization
-  include Payloadable
   include Redisable
   include Lockable
 
@@ -63,7 +62,7 @@ class VoteService < BaseService
   end
 
   def build_json(vote)
-    Oj.dump(serialize_payload(vote, ActivityPub::VoteSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:create_vote, vote).render)
   end
 
   def increment_voters_count!

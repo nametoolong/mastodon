@@ -4,7 +4,6 @@ class Form::AccountBatch
   include ActiveModel::Model
   include Authorization
   include AccountableConcern
-  include Payloadable
 
   attr_accessor :account_ids, :action, :current_account,
                 :select_all_matching, :query

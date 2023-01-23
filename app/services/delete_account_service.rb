@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 class DeleteAccountService < BaseService
-  include Payloadable
-
   ASSOCIATIONS_ON_SUSPEND = %w(
     account_notes
     account_pins
@@ -111,7 +109,7 @@ class DeleteAccountService < BaseService
     # we have to force it to unfollow them.
 
     ActivityPub::DeliveryWorker.push_bulk(Follow.where(account: @account)) do |follow|
-      [Oj.dump(serialize_payload(follow, ActivityPub::RejectFollowSerializer)), follow.target_account_id, @account.inbox_url]
+      [Oj.dump(ActivityPub::Renderer.new(:reject_follow, follow).render), follow.target_account_id, @account.inbox_url]
     end
   end
 
@@ -123,7 +121,7 @@ class DeleteAccountService < BaseService
     # if the remote account gets un-suspended.
 
     ActivityPub::DeliveryWorker.push_bulk(Follow.where(target_account: @account)) do |follow|
-      [Oj.dump(serialize_payload(follow, ActivityPub::UndoFollowSerializer)), follow.account_id, @account.inbox_url]
+      [Oj.dump(ActivityPub::Renderer.new(:undo_follow, follow).render), follow.account_id, @account.inbox_url]
     end
   end
 
@@ -267,7 +265,7 @@ class DeleteAccountService < BaseService
   end
 
   def delete_actor_json
-    @delete_actor_json ||= Oj.dump(serialize_payload(@account, ActivityPub::DeleteActorSerializer))
+    @delete_actor_json ||= Oj.dump(ActivityPub::Renderer.new(:delete_actor, @account).render)
   end
 
   def delivery_inboxes

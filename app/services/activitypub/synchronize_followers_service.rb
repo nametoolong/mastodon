@@ -2,7 +2,6 @@
 
 class ActivityPub::SynchronizeFollowersService < BaseService
   include JsonLdHelper
-  include Payloadable
 
   def call(account, partial_collection_url)
     @account = account
@@ -47,7 +46,7 @@ class ActivityPub::SynchronizeFollowersService < BaseService
   end
 
   def build_undo_follow_json(follow)
-    Oj.dump(serialize_payload(follow, ActivityPub::UndoFollowSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:undo_follow, follow).render)
   end
 
   def collection_items(collection_or_uri)

@@ -2,7 +2,6 @@
 
 class FavouriteService < BaseService
   include Authorization
-  include Payloadable
 
   # Favourite a status and notify remote user
   # @param [Account] account
@@ -44,6 +43,6 @@ class FavouriteService < BaseService
   end
 
   def build_json(favourite)
-    Oj.dump(serialize_payload(favourite, ActivityPub::LikeSerializer))
+    Oj.dump(ActivityPub::Renderer.new(:like, favourite).render)
   end
 end

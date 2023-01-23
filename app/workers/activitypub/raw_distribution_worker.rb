@@ -2,7 +2,6 @@
 
 class ActivityPub::RawDistributionWorker
   include Sidekiq::Worker
-  include Payloadable
 
   sidekiq_options queue: 'push'
 
