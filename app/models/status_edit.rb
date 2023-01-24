@@ -23,8 +23,17 @@ class StatusEdit < ApplicationRecord
     media_attachments_changed
   )
 
-  class PreservedMediaAttachment < ActiveModelSerializers::Model
-    attributes :media_attachment, :description
+  class PreservedMediaAttachment
+    include ActiveModel::Model
+
+    attr_accessor :media_attachment, :description
+
+    def initialize(media_attachment:, description:)
+      super(
+        media_attachment: media_attachment,
+        description:      description
+      )
+    end
 
     delegate :id, :type, :url, :preview_url, :remote_url,
              :preview_remote_url, :text_url, :meta, :blurhash,

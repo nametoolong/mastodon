@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-class AccountSuggestions::Suggestion < ActiveModelSerializers::Model
-  attributes :account, :source
-
+AccountSuggestions::Suggestion = Struct.new(:account, :source, keyword_init: true) do
   delegate :id, to: :account, prefix: true
 end
