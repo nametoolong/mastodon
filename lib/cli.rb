@@ -122,13 +122,7 @@ module Mastodon
       prompt.warn('Do NOT interrupt this process...')
 
       delete_account = ->(account) do
-        payload = ActiveModelSerializers::SerializableResource.new(
-          account,
-          serializer: ActivityPub::DeleteActorSerializer,
-          adapter: ActivityPub::Adapter
-        ).as_json
-
-        json = Oj.dump(ActivityPub::LinkedDataSignature.new(payload).sign!(account))
+        json = Oj.dump(ActivityPub::Renderer.new(:delete_actor, account).render(signer: account))
 
         unless options[:dry_run]
           ActivityPub::DeliveryWorker.push_bulk(inboxes) do |inbox_url|
