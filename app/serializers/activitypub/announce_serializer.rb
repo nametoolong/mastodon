@@ -3,7 +3,7 @@
 class ActivityPub::AnnounceSerializer < ActivityPub::Serializer
   serialize(:type) { 'Announce' }
 
-  serialize :id, :actor, :to, :cc, :object
+  serialize :id, :actor, :object
 
   def id
     ActivityPub::TagManager.instance.activity_uri_for(model)
