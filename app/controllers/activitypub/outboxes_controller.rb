@@ -8,6 +8,7 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
 
   before_action :require_account_signature!, if: :authorized_fetch_mode?
   before_action :set_statuses
+  before_action :preload_account
   before_action :set_cache_headers
 
   def show
@@ -67,6 +68,18 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
       LIMIT,
       params_slice(:max_id, :min_id, :since_id)
     )
+  end
+
+  def preload_account
+    return if @account.nil? || !@statuses.is_a?(Enumerable)
+
+    account_id = @account.id
+
+    @statuses.each do |status|
+      if status.account_id == account_id
+        status.account = @account
+      end
+    end
   end
 
   def page_requested?
