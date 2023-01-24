@@ -137,7 +137,7 @@ describe ResolveURLService, type: :service do
 
       before do
         stub_request(:get, url).to_return(status: 302, headers: { 'Location' => status_url })
-        body = ActiveModelSerializers::SerializableResource.new(status, serializer: ActivityPub::NoteSerializer, adapter: ActivityPub::Adapter).to_json
+        body = Oj.dump(ActivityPub::Renderer.new(:note, status).render)
         stub_request(:get, status_url).to_return(body: body, headers: { 'Content-Type' => 'application/activity+json' })
       end
 

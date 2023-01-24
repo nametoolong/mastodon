@@ -18,7 +18,7 @@ RSpec.describe ActivityPub::Activity::Update do
       end
 
       let(:actor_json) do
-        ActiveModelSerializers::SerializableResource.new(modified_sender, serializer: ActivityPub::ActorSerializer, adapter: ActivityPub::Adapter).as_json
+        ActivityPub::Renderer.new(:actor, modified_sender).render
       end
 
       let(:json) do
