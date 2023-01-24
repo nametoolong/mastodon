@@ -159,7 +159,11 @@ class ActivityPub::ActivityBuilder
   end
 
   def update_note
-    last_edited_at = [object.edited_at.to_i, object.preloadable_poll.updated_at.to_i].max
+    last_edited_at = [
+      object.created_at.to_i,
+      object.edited_at&.to_i,
+      object.preloadable_poll&.updated_at&.to_i
+    ].tap(&:compact!).max
 
     {
       id: [ActivityPub::TagManager.instance.uri_for(object), '#updates/', last_edited_at].join,
