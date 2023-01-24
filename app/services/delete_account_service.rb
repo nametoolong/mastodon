@@ -265,7 +265,7 @@ class DeleteAccountService < BaseService
   end
 
   def delete_actor_json
-    @delete_actor_json ||= Oj.dump(ActivityPub::Renderer.new(:delete_actor, @account).render)
+    @delete_actor_json ||= Oj.dump(ActivityPub::Renderer.new(:delete_actor, @account).render(signer: @account, always_sign: true))
   end
 
   def delivery_inboxes

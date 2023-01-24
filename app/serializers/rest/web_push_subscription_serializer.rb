@@ -7,6 +7,10 @@ class REST::WebPushSubscriptionSerializer < Blueprinter::Base
     (object.data&.dig('alerts') || {}).transform_values { |v| ActiveModel::Type::Boolean.new.cast(v) }
   end
 
+  field :policy do |object|
+    object.data&.dig('policy') || 'all'
+  end
+
   field :server_key do
     Rails.configuration.x.vapid_public_key
   end
