@@ -8,7 +8,7 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
 
   before_action :require_account_signature!, if: :authorized_fetch_mode?
   before_action :set_statuses
-  before_action :preload_account
+  before_action :preload_associations
   before_action :set_cache_headers
 
   def show
@@ -17,7 +17,7 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
     else
       expires_in(3.minutes, public: public_fetch_mode?)
     end
-    render json: ActivityPub::Renderer.new(:outbox, outbox_presenter).render, content_type: 'application/activity+json'
+    render json: ActivityPub::Renderer.new(:outbox, outbox_presenter, replies_map: @replies_map || {}).render, content_type: 'application/activity+json'
   end
 
   private
@@ -70,16 +70,20 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
     )
   end
 
-  def preload_account
+  def preload_associations
     return if @account.nil? || !@statuses.is_a?(Enumerable)
 
     account_id = @account.id
+    status_ids = []
 
     @statuses.each do |status|
       if status.account_id == account_id
         status.account = @account
+        status_ids << status.id
       end
     end
+
+    @replies_map = Status.replies_map(status_ids, account_id)
   end
 
   def page_requested?

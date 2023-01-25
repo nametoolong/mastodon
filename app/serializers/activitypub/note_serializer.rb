@@ -96,26 +96,28 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
     serialize :conversation
   end
 
-  show_if ->(model) { model.preloadable_poll&.multiple? } do
-    # Multiple options
-    serialize :anyOf, from: :poll_options, with: OptionSerializer
-  end
+  show_if ->(model) { !model.preloadable_poll.nil? } do
+    show_if ->(model) { model.preloadable_poll.multiple? } do
+      # Multiple options
+      serialize :anyOf, from: :poll_options, with: OptionSerializer
+    end
 
-  show_if ->(model) { model.preloadable_poll && !model.preloadable_poll.multiple? } do
-    # Single option
-    serialize :oneOf, from: :poll_options, with: OptionSerializer
-  end
+    show_if ->(model) { !model.preloadable_poll.multiple? } do
+      # Single option
+      serialize :oneOf, from: :poll_options, with: OptionSerializer
+    end
 
-  show_if ->(model) { model.preloadable_poll&.expires_at&.present? } do
-    serialize :endTime, from: :end_time
-  end
+    show_if ->(model) { model.preloadable_poll.expires_at.present? } do
+      serialize :endTime, from: :end_time
+    end
 
-  show_if ->(model) { model.preloadable_poll&.expired? } do
-    serialize :closed, from: :end_time
-  end
+    show_if ->(model) { model.preloadable_poll.expired? } do
+      serialize :closed, from: :end_time
+    end
 
-  show_if ->(model) { model.preloadable_poll&.voters_count } do
-    serialize :votersCount, from: :voters_count
+    show_if ->(model) { model.preloadable_poll.voters_count } do
+      serialize :votersCount, from: :voters_count
+    end
   end
 
   def id
@@ -209,9 +211,14 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
   end
 
   def replies
-    replies = model.self_replies(5).pluck(:id, :uri)
-    last_id = replies.last&.first
+    replies = (
+      (options[:replies_map] ? options[:replies_map][model.id] : nil) ||
+      model.self_replies(5).pluck(:id, :uri)
+    )
+
     next_page = begin
+      last_id = replies.last&.first
+
       if last_id
         ActivityPub::TagManager.instance.replies_uri_for(model, page: true, min_id: last_id)
       else
@@ -219,12 +226,14 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
       end
     end
 
+    replies_uri = ActivityPub::TagManager.instance.replies_uri_for(model)
+
     ActivityPub::CollectionPresenter.new(
       type: :unordered,
-      id: ActivityPub::TagManager.instance.replies_uri_for(model),
+      id: replies_uri,
       first: ActivityPub::CollectionPresenter.new(
         type: :unordered,
-        part_of: ActivityPub::TagManager.instance.replies_uri_for(model),
+        part_of: replies_uri,
         items: replies.map(&:second),
         next: next_page
       )

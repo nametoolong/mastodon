@@ -344,6 +344,24 @@ class Status < ApplicationRecord
       StatusPin.where(status_id: status_ids).where(account_id: account_id).pluck(:status_id).each_with_object({}) { |p, h| h[p] = true }
     end
 
+    def replies_map(status_ids, account_id = nil, limit_per_status: 5)
+      partition_table = select(
+        'statuses.id AS id',
+        'statuses.uri AS uri',
+        'statuses.in_reply_to_id AS in_reply_to_id',
+        'row_number() OVER (PARTITION BY statuses.in_reply_to_id ORDER BY statuses.id ASC) AS row_count'
+      ).where(in_reply_to_id: status_ids, visibility: [:public, :unlisted]).reorder(id: :asc)
+
+      partition_table = partition_table.where(account_id: account_id) if account_id
+
+      relation = Status.unscoped.select(:id, :uri, :in_reply_to_id).from(partition_table).where(['row_count <= ?', limit_per_status])
+
+      relation.pluck(:id, :uri, :in_reply_to_id).each_with_object(status_ids.to_h { |id| [id, []] }) do |r, h|
+        status_id = r[2]
+        h[status_id] << r.slice(0, 2)
+      end
+    end
+
     def reload_stale_associations!(cached_items)
       account_ids = cached_items.each_with_object({}) do |item, hash|
         hash[item.account_id] = true
