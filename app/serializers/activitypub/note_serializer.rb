@@ -211,10 +211,9 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
   end
 
   def replies
-    replies = (
-      (options[:replies_map] ? options[:replies_map][model.id] : nil) ||
-      model.self_replies(5).pluck(:id, :uri)
-    )
+    replies = options[:replies_map] ?
+      options[:replies_map][model.id] :
+      model.replies.merge(Status.local).where(visibility: [:public, :unlisted]).reorder(id: :asc).limit(5).pluck(:id, :uri)
 
     next_page = begin
       last_id = replies.last&.first
@@ -222,7 +221,7 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
       if last_id
         ActivityPub::TagManager.instance.replies_uri_for(model, page: true, min_id: last_id)
       else
-        ActivityPub::TagManager.instance.replies_uri_for(model, page: true, only_other_accounts: true)
+        ActivityPub::TagManager.instance.replies_uri_for(model, page: true, only_remote: true)
       end
     end
 

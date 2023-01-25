@@ -17,7 +17,7 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
     else
       expires_in(3.minutes, public: public_fetch_mode?)
     end
-    render json: ActivityPub::Renderer.new(:outbox, outbox_presenter, replies_map: @replies_map || {}).render, content_type: 'application/activity+json'
+    render json: ActivityPub::Renderer.new(:outbox, outbox_presenter, replies_map: @replies_map).render, content_type: 'application/activity+json'
   end
 
   private
@@ -71,19 +71,17 @@ class ActivityPub::OutboxesController < ActivityPub::BaseController
   end
 
   def preload_associations
-    return if @account.nil? || !@statuses.is_a?(Enumerable)
+    return unless @statuses.is_a?(Enumerable)
 
     account_id = @account.id
-    status_ids = []
 
     @statuses.each do |status|
       if status.account_id == account_id
         status.account = @account
-        status_ids << status.id
       end
     end
 
-    @replies_map = Status.replies_map(status_ids, account_id)
+    @replies_map = Status.replies_map(@statuses.map(&:id), only_local: true)
   end
 
   def page_requested?

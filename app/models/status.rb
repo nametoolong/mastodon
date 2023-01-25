@@ -344,17 +344,18 @@ class Status < ApplicationRecord
       StatusPin.where(status_id: status_ids).where(account_id: account_id).pluck(:status_id).each_with_object({}) { |p, h| h[p] = true }
     end
 
-    def replies_map(status_ids, account_id = nil, limit_per_status: 5)
+    def replies_map(status_ids, account_id = nil, only_local: false, limit_per_status: 5)
       partition_table = select(
         'statuses.id AS id',
         'statuses.uri AS uri',
         'statuses.in_reply_to_id AS in_reply_to_id',
         'row_number() OVER (PARTITION BY statuses.in_reply_to_id ORDER BY statuses.id ASC) AS row_count'
-      ).where(in_reply_to_id: status_ids, visibility: [:public, :unlisted]).reorder(id: :asc)
+      ).where(in_reply_to_id: status_ids, visibility: [:public, :unlisted]).reorder(nil)
 
       partition_table = partition_table.where(account_id: account_id) if account_id
+      partition_table = partition_table.where(local: true)            if only_local
 
-      relation = Status.unscoped.select(:id, :uri, :in_reply_to_id).from(partition_table).where(['row_count <= ?', limit_per_status])
+      relation = Status.unscoped.select(:id, :uri, :in_reply_to_id).from(partition_table).where(['row_count <= ?', limit_per_status]).order(id: :asc)
 
       relation.pluck(:id, :uri, :in_reply_to_id).each_with_object(status_ids.to_h { |id| [id, []] }) do |r, h|
         status_id = r[2]
