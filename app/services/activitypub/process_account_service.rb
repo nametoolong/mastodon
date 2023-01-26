@@ -21,15 +21,7 @@ class ActivityPub::ProcessAccountService < BaseService
     @domain      = TagManager.instance.normalize_domain(domain)
     @collections = {}
 
-    @second_level_domain = nil
-
-    if @domain
-      parse_result = PublicSuffix.domain(@domain, ignore_private: true)
-
-      return nil if parse_result.blank?
-
-      @second_level_domain = parse_result.freeze
-    end
+    @actor_host  = Addressable::URI.parse(@uri).host
 
     # The key does not need to be unguessable, it just needs to be somewhat unique
     @options[:request_id] ||= "#{Time.now.utc.to_i}-#{username}@#{domain}"
@@ -43,7 +35,9 @@ class ActivityPub::ProcessAccountService < BaseService
 
       if @account.nil?
         with_redis do |redis|
-          return nil if redis.pfcount("unique_subdomains_for:#{PublicSuffix.domain(@domain, ignore_private: true)}") >= SUBDOMAINS_RATELIMIT
+          second_level_domain = PublicSuffix.domain(@domain, ignore_private: true) || :invalid_domain
+
+          return nil if redis.pfcount("unique_subdomains_for:#{second_level_domain}") >= SUBDOMAINS_RATELIMIT
 
           discoveries = redis.incr("discovery_per_request:#{@options[:request_id]}")
           redis.expire("discovery_per_request:#{@options[:request_id]}", 5.minutes.seconds)
@@ -227,39 +221,30 @@ class ActivityPub::ProcessAccountService < BaseService
 
     url_candidate = url_to_href(@json['url'], 'text/html')
 
-    if unsupported_uri_scheme?(url_candidate) || mismatching_origin?(url_candidate)
+    if unsupported_uri_scheme?(url_candidate) || !same_origin?(url_candidate)
       nil
     else
       url_candidate
     end
   end
 
-  def property_values
-    return unless @json['attachment'].is_a?(Array)
-    as_array(@json['attachment']).select { |attachment| attachment['type'] == 'PropertyValue' }.map { |attachment| attachment.slice('name', 'value') }
-  end
-
-  def mismatching_origin?(url)
-    needle   = Addressable::URI.parse(url).host
-    haystack = Addressable::URI.parse(@uri).host
-
-    !haystack.casecmp(needle).zero?
-  end
-
   def valid_collection_url(url)
-    if url.is_a?(String) && !unsupported_uri_scheme?(url) && same_domain?(url)
+    if url.is_a?(String) && !unsupported_uri_scheme?(url) && same_origin?(url)
       url
     else
       ''
     end
   end
 
-  def same_domain?(url)
-    return TagManager.instance.local_url?(url) if @second_level_domain.nil?
+  def same_origin?(url)
+    return TagManager.instance.local_url?(url) if @domain.nil?
 
-    needle = PublicSuffix.domain(Addressable::URI.parse(url).host, ignore_private: true)
+    @actor_host.casecmp(Addressable::URI.parse(url).host).zero?
+  end
 
-    @second_level_domain.casecmp(needle).zero?
+  def property_values
+    return unless @json['attachment'].is_a?(Array)
+    as_array(@json['attachment']).select { |attachment| attachment['type'] == 'PropertyValue' }.map { |attachment| attachment.slice('name', 'value') }
   end
 
   def outbox_total_items
@@ -286,7 +271,7 @@ class ActivityPub::ProcessAccountService < BaseService
     return [nil, nil] if @json[type].blank?
     return @collections[type] if @collections.key?(type)
 
-    return [nil, nil] if @json[type].is_a?(String) && !same_domain?(@json[type])
+    return [nil, nil] if @json[type].is_a?(String) && !same_origin?(@json[type])
 
     collection = fetch_resource_without_id_validation(@json[type])
 
