@@ -21,6 +21,8 @@ class ActivityPub::ProcessAccountService < BaseService
     @domain      = TagManager.instance.normalize_domain(domain)
     @collections = {}
 
+    @second_level_domain = PublicSuffix.domain(@domain, ignore_private: true).freeze
+
     # The key does not need to be unguessable, it just needs to be somewhat unique
     @options[:request_id] ||= "#{Time.now.utc.to_i}-#{username}@#{domain}"
 
@@ -93,10 +95,10 @@ class ActivityPub::ProcessAccountService < BaseService
   end
 
   def set_immediate_protocol_attributes!
-    @account.inbox_url               = @json['inbox'] || ''
-    @account.outbox_url              = @json['outbox'] || ''
-    @account.shared_inbox_url        = (@json['endpoints'].is_a?(Hash) ? @json['endpoints']['sharedInbox'] : @json['sharedInbox']) || ''
-    @account.followers_url           = @json['followers'] || ''
+    @account.inbox_url               = valid_collection_url(@json['inbox'])
+    @account.outbox_url              = valid_collection_url(@json['outbox'])
+    @account.shared_inbox_url        = valid_collection_url(@json['endpoints'].is_a?(Hash) ? @json['endpoints']['sharedInbox'] : @json['sharedInbox'])
+    @account.followers_url           = valid_collection_url(@json['followers'])
     @account.url                     = url || @uri
     @account.uri                     = @uri
     @account.actor_type              = actor_type
@@ -104,8 +106,8 @@ class ActivityPub::ProcessAccountService < BaseService
   end
 
   def set_immediate_attributes!
-    @account.featured_collection_url = @json['featured'] || ''
-    @account.devices_url             = @json['devices'] || ''
+    @account.featured_collection_url = valid_collection_url(@json['featured'])
+    @account.devices_url             = valid_collection_url(@json['devices'])
     @account.display_name            = @json['name'] || ''
     @account.note                    = @json['summary'] || ''
     @account.locked                  = @json['manuallyApprovesFollowers'] || false
@@ -236,6 +238,20 @@ class ActivityPub::ProcessAccountService < BaseService
     !haystack.casecmp(needle).zero?
   end
 
+  def valid_collection_url(url)
+    if url.is_a?(String) && !unsupported_uri_scheme?(url) && same_domain?(url)
+      url
+    else
+      ''
+    end
+  end
+
+  def same_domain?(url)
+    needle = PublicSuffix.domain(Addressable::URI.parse(url).host, ignore_private: true)
+
+    @second_level_domain.casecmp(needle).zero?
+  end
+
   def outbox_total_items
     collection_info('outbox').first
   end
@@ -259,6 +275,8 @@ class ActivityPub::ProcessAccountService < BaseService
   def collection_info(type)
     return [nil, nil] if @json[type].blank?
     return @collections[type] if @collections.key?(type)
+
+    return [nil, nil] if @json[type].is_a?(String) && !same_domain?(@json[type])
 
     collection = fetch_resource_without_id_validation(@json[type])
 
