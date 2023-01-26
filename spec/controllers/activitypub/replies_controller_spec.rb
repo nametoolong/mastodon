@@ -5,7 +5,6 @@ require 'rails_helper'
 RSpec.describe ActivityPub::RepliesController, type: :controller do
   let(:status) { Fabricate(:status, visibility: parent_visibility) }
   let(:remote_account)  { Fabricate(:account, domain: 'foobar.com') }
-  let(:remote_reply_id) { 'https://foobar.com/statuses/1234' }
   let(:remote_querier) { nil }
 
   shared_examples 'cacheable response' do
@@ -95,52 +94,50 @@ RSpec.describe ActivityPub::RepliesController, type: :controller do
 
       it_behaves_like 'cacheable response'
 
-      context 'without only_other_accounts' do
+      context 'without only_remote' do
         it "returns items with thread author's replies" do
           expect(page_json).to be_a Hash
           expect(page_json[:items]).to be_an Array
-          expect(page_json[:items].size).to eq 1
+          expect(page_json[:items].size).to eq 3
           expect(page_json[:items].all? { |item| item[:to].include?(ActivityPub::TagManager::COLLECTIONS[:public]) || item[:cc].include?(ActivityPub::TagManager::COLLECTIONS[:public]) }).to be true
         end
 
-        context 'when there are few self-replies' do
-          it 'points next to replies from other people' do
+        it 'inlines local replies' do
+          public_collection = ActivityPub::TagManager::COLLECTIONS[:public]
+          expect(page_json[:items].all? { |item| item[:to].include?(public_collection) || item[:cc].include?(public_collection) }).to be true
+          expect(page_json[:items].all? { |item| ActivityPub::TagManager.instance.local_uri?(item[:id]) }).to be true
+        end
+
+        context 'when there are few local replies' do
+          it 'points next to replies from remote accounts' do
             expect(page_json).to be_a Hash
-            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_other_accounts=true', 'page=true')
+            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_remote=true', 'page=true')
           end
         end
 
-        context 'when there are many self-replies' do
+        context 'when there are many local replies' do
           before do
             10.times { Fabricate(:status, account: status.account, thread: status, visibility: :public) }
           end
 
-          it 'points next to other self-replies' do
+          it 'points next to other local replies' do
             expect(page_json).to be_a Hash
-            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_other_accounts=false', 'page=true')
+            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_remote=false', 'page=true')
           end
         end
       end
 
-      context 'with only_other_accounts' do
-        let(:only_other_accounts) { 'true' }
+      context 'with only_remote' do
+        let(:only_remote) { 'true' }
 
-        it 'returns items with other public or unlisted replies' do
+        it 'returns items with remote replies' do
           expect(page_json).to be_a Hash
           expect(page_json[:items]).to be_an Array
-          expect(page_json[:items].size).to eq 3
-        end
-
-        it 'only inlines items that are local and public or unlisted replies' do
-          inlined_replies = page_json[:items].select { |x| x.is_a?(Hash) }
-          public_collection = ActivityPub::TagManager::COLLECTIONS[:public]
-          expect(inlined_replies.all? { |item| item[:to].include?(public_collection) || item[:cc].include?(public_collection) }).to be true
-          expect(inlined_replies.all? { |item| ActivityPub::TagManager.instance.local_uri?(item[:id]) }).to be true
+          expect(page_json[:items].size).to eq 1
         end
 
         it 'uses ids for remote toots' do
-          remote_replies = page_json[:items].select { |x| !x.is_a?(Hash) }
-          expect(remote_replies.all? { |item| item.is_a?(String) && !ActivityPub::TagManager.instance.local_uri?(item) }).to be true
+          expect(page_json[:items].all? { |item| item.is_a?(String) && !ActivityPub::TagManager.instance.local_uri?(item) }).to be true
         end
 
         context 'when there are few replies' do
@@ -152,12 +149,12 @@ RSpec.describe ActivityPub::RepliesController, type: :controller do
 
         context 'when there are many replies' do
           before do
-            10.times { Fabricate(:status, thread: status, visibility: :public) }
+            10.times { |i| Fabricate(:status, account: remote_account, thread: status, visibility: :public, uri: "https://foobar.com/statuses/#{i}") }
           end
 
           it 'points next to other replies' do
             expect(page_json).to be_a Hash
-            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_other_accounts=true', 'page=true')
+            expect(Addressable::URI.parse(page_json[:next]).query.split('&')).to include('only_remote=true', 'page=true')
           end
         end
       end
@@ -176,12 +173,12 @@ RSpec.describe ActivityPub::RepliesController, type: :controller do
     Fabricate(:status, account: status.account, thread: status, visibility: :public)
     Fabricate(:status, account: status.account, thread: status, visibility: :private)
 
-    Fabricate(:status, account: remote_account, thread: status, visibility: :public, uri: remote_reply_id)
+    Fabricate(:status, account: remote_account, thread: status, visibility: :public, uri: 'https://foobar.com/statuses/1234')
   end
 
   describe 'GET #index' do
-    subject(:response) { get :index, params: { account_username: status.account.username, status_id: status.id, only_other_accounts: only_other_accounts } }
-    let(:only_other_accounts) { nil }
+    subject(:response) { get :index, params: { account_username: status.account.username, status_id: status.id, only_remote: only_remote } }
+    let(:only_remote) { nil }
 
     context 'with no signature' do
       it_behaves_like 'allowed access'

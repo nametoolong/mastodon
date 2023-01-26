@@ -6,10 +6,11 @@ describe ActivityPub::Renderer do
   context 'when rendering :note' do
     let!(:account) { Fabricate(:account) }
     let!(:other)   { Fabricate(:account) }
+    let!(:remote)  { Fabricate(:account, uri: 'https://example.com/123') }
     let!(:parent)  { Fabricate(:status, account: account, visibility: :public) }
     let!(:reply1)  { Fabricate(:status, account: account, thread: parent, visibility: :public) }
-    let!(:reply2)  { Fabricate(:status, account: account, thread: parent, visibility: :public) }
-    let!(:reply3)  { Fabricate(:status, account: other, thread: parent, visibility: :public) }
+    let!(:reply2)  { Fabricate(:status, account: other, thread: parent, visibility: :public) }
+    let!(:reply3)  { Fabricate(:status, account: remote, thread: parent, visibility: :public) }
     let!(:reply4)  { Fabricate(:status, account: account, thread: parent, visibility: :public) }
     let!(:reply5)  { Fabricate(:status, account: account, thread: parent, visibility: :direct) }
 
@@ -27,11 +28,11 @@ describe ActivityPub::Renderer do
       expect(subject['replies']['first']['type']).to eql('CollectionPage')
     end
 
-    it 'includes public self-replies in its replies collection' do
+    it 'includes public local replies in its replies collection' do
       expect(subject['replies']['first']['items']).to include(reply1.uri, reply2.uri, reply4.uri)
     end
 
-    it 'does not include replies from others in its replies collection' do
+    it 'does not include replies from remote accounts in its replies collection' do
       expect(subject['replies']['first']['items']).to_not include(reply3.uri)
     end
 
