@@ -14,5 +14,5 @@ class REST::CredentialAccountSerializer < REST::AccountSerializer
     }
   end
 
-  association :user_role, name: :role, blueprint: REST::RoleSerializer
+  association :user_role, name: :role, blueprint: REST::RoleSerializer, view: :full
 end

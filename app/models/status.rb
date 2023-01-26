@@ -371,7 +371,7 @@ class Status < ApplicationRecord
 
       return if account_ids.empty?
 
-      accounts = Account.where(id: account_ids.keys).eager_load(:account_stat, :user).index_by(&:id)
+      accounts = Account.where(id: account_ids.keys).eager_load(:account_stat, user: :role).index_by(&:id)
 
       cached_items.each do |item|
         item.account = accounts[item.account_id]

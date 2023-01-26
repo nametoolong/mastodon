@@ -96,6 +96,24 @@ class REST::AccountSerializer < Blueprinter::Base
     end
   end
 
+  association :emojis, blueprint: REST::CustomEmojiSerializer
+
+  association :moved, blueprint: REST::AccountSerializer, if: ->(_name, object, options) {
+    object.moved?
+  } do |object|
+    object.suspended? ? nil : AccountDecorator.new(object.moved_to_account)
+  end
+
+  association :roles, blueprint: REST::RoleSerializer, view: :public, if: ->(_name, object, options) {
+    object.local?
+  } do |object|
+    if object.suspended?
+      []
+    else
+      [object.user.role].tap(&:compact!).keep_if(&:highlighted?)
+    end
+  end
+
   class AccountDecorator < SimpleDelegator
     def self.model_name
       Account.model_name
@@ -105,12 +123,4 @@ class REST::AccountSerializer < Blueprinter::Base
       false
     end
   end
-
-  association :moved, blueprint: REST::AccountSerializer, if: ->(_name, object, options) {
-    object.moved?
-  } do |object|
-    object.suspended? ? nil : AccountDecorator.new(object.moved_to_account)
-  end
-
-  association :emojis, blueprint: REST::CustomEmojiSerializer
 end

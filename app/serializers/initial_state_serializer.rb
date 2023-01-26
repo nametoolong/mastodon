@@ -121,5 +121,5 @@ class InitialStateSerializer < Blueprinter::Base
   field :settings
 
   association :push_subscription, blueprint: REST::WebPushSubscriptionSerializer
-  association :role, blueprint: REST::RoleSerializer
+  association :role, blueprint: REST::RoleSerializer, view: :full
 end
