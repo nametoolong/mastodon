@@ -12,6 +12,8 @@ Nuage is still very experimental. **Use at your own risk!**
 
 * [Blueprinter](https://github.com/blueprinter-ruby/blueprinter) instead of AMS for API serialization. The replacement reduced API response time by 20%.
 
+* [Cache Crispies](https://github.com/codenoble/cache-crispies) instead of AMS for ActivityPub serialization.
+
 * [Nokolexbor](https://github.com/serpapi/nokolexbor) instead of Nokogiri in Premailer processing.
 
 * A record cache for status distribution. This slightly reduced database load when handling new statuses.

@@ -1,5 +1,7 @@
 # Security Policy
 
+If you believe you've identified a security vulnerability specifically in Nuage, write to my [Tutanota](https://tutanota.com/) inbox under the same handle as GitHub. That is, nametoolong@domain, where domain is tutanota.com. Please also inform Mastodon developers if the vulnerability affects stock Mastodon.
+
 If you believe you've identified a security vulnerability in Mastodon (a bug that allows something to happen that shouldn't be possible), you can reach us at <security@joinmastodon.org>.
 
 You should *not* report such issues on GitHub or in other public spaces to give us time to publish a fix for the issue without exposing Mastodon's users to increased risk.
