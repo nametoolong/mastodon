@@ -21,7 +21,15 @@ class ActivityPub::ProcessAccountService < BaseService
     @domain      = TagManager.instance.normalize_domain(domain)
     @collections = {}
 
-    @second_level_domain = PublicSuffix.domain(@domain, ignore_private: true).freeze
+    @second_level_domain = nil
+
+    if @domain
+      parse_result = PublicSuffix.domain(@domain, ignore_private: true)
+
+      return nil if parse_result.blank?
+
+      @second_level_domain = parse_result.freeze
+    end
 
     # The key does not need to be unguessable, it just needs to be somewhat unique
     @options[:request_id] ||= "#{Time.now.utc.to_i}-#{username}@#{domain}"
@@ -247,6 +255,8 @@ class ActivityPub::ProcessAccountService < BaseService
   end
 
   def same_domain?(url)
+    return TagManager.instance.local_url?(url) if @second_level_domain.nil?
+
     needle = PublicSuffix.domain(Addressable::URI.parse(url).host, ignore_private: true)
 
     @second_level_domain.casecmp(needle).zero?
