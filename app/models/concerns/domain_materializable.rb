@@ -17,7 +17,7 @@ module DomainMaterializable
   end
 
   def count_unique_subdomains!
-    second_and_top_level_domain = PublicSuffix.domain(domain, ignore_private: true)
+    second_and_top_level_domain = PublicSuffix.domain(domain, ignore_private: true) || :invalid_domain
     with_redis do |redis|
       redis.pfadd("unique_subdomains_for:#{second_and_top_level_domain}", domain)
       redis.expire("unique_subdomains_for:#{second_and_top_level_domain}", 1.minute.seconds)

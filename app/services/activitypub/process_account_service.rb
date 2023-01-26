@@ -34,10 +34,9 @@ class ActivityPub::ProcessAccountService < BaseService
       @suspension_changed = false
 
       if @account.nil?
+        second_and_top_level_domain = PublicSuffix.domain(@domain, ignore_private: true) || :invalid_domain
         with_redis do |redis|
-          second_level_domain = PublicSuffix.domain(@domain, ignore_private: true) || :invalid_domain
-
-          return nil if redis.pfcount("unique_subdomains_for:#{second_level_domain}") >= SUBDOMAINS_RATELIMIT
+          return nil if redis.pfcount("unique_subdomains_for:#{second_and_top_level_domain}") >= SUBDOMAINS_RATELIMIT
 
           discoveries = redis.incr("discovery_per_request:#{@options[:request_id]}")
           redis.expire("discovery_per_request:#{@options[:request_id]}", 5.minutes.seconds)
