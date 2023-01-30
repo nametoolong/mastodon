@@ -4,7 +4,6 @@ class REST::Admin::AccountSerializer < Blueprinter::Base
   fields :username, :domain, :created_at
 
   field :user_email, name: :email
-  field :user_role, name: :role
   field :suspended?, name: :suspended
   field :silenced?, name: :silenced
   field :sensitized?, name: :sensitized
@@ -38,6 +37,7 @@ class REST::Admin::AccountSerializer < Blueprinter::Base
   end
 
   association :itself, name: :account, blueprint: REST::AccountSerializer
+  association :user_role, name: :role, blueprint: REST::RoleSerializer, view: :full
   association :ips, blueprint: REST::Admin::IpSerializer do |object|
     object.user&.ips
   end
