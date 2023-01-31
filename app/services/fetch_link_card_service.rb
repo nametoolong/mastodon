@@ -80,7 +80,7 @@ class FetchLinkCardService < BaseService
       end
     end
 
-    urls.reject { |uri| bad_url?(uri) }.first
+    urls.find { |uri| !bad_url?(uri) }
   end
 
   def bad_url?(uri)
@@ -88,10 +88,14 @@ class FetchLinkCardService < BaseService
     uri.host.blank? || TagManager.instance.local_url?(uri.to_s) || !%w(http https).include?(uri.scheme)
   end
 
-  def mention_link?(anchor)
-    @status.mentions.any? do |mention|
-      anchor['href'] == ActivityPub::TagManager.instance.url_for(mention.account)
+  def preloaded_mention_links
+    @mention_links ||= @status.mentions.includes(:account).map do |mention|
+      ActivityPub::TagManager.instance.url_for(mention.account)
     end
+  end
+
+  def mention_link?(anchor)
+    preloaded_mention_links.any? { |link| anchor['href'] == link }
   end
 
   def skip_link?(anchor)
