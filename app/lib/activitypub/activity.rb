@@ -21,14 +21,13 @@ class ActivityPub::Activity
 
   class << self
     def factory(json, account, **options)
-      @json = json
-      klass&.new(json, account, **options)
+      klass(json['type'])&.new(json, account, **options)
     end
 
     private
 
-    def klass
-      case @json['type']
+    def klass(type)
+      case type
       when 'Create'
         ActivityPub::Activity::Create
       when 'Announce'
