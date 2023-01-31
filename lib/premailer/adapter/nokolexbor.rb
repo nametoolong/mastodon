@@ -63,7 +63,7 @@ class Premailer
                   el['style'] = (el['style'] || '') + " [SPEC=#{specificity}[#{declaration}]]"
                 end
               end
-            rescue ::Nokolexbor::LexborError, RuntimeError, ArgumentError
+            rescue ::Nokolexbor::Lexbor::LexborError, RuntimeError, ArgumentError
               $stderr.puts "CSS syntax error with selector: #{selector}" if @options[:verbose]
               next
             end
