@@ -6,7 +6,7 @@ class LinkCrawlWorker
   sidekiq_options queue: 'pull', retry: 0
 
   def perform(status_id)
-    FetchLinkCardService.new.call(Status.find(status_id, include: :preview_cards))
+    FetchLinkCardService.new.call(Status.includes(:preview_cards).find(status_id))
   rescue ActiveRecord::RecordNotFound
     true
   end
