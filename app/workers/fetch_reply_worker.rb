@@ -6,7 +6,7 @@ class FetchReplyWorker
 
   sidekiq_options queue: 'pull', retry: 3
 
-  def perform(child_url)
-    FetchRemoteStatusService.new.call(child_url)
+  def perform(child_url, options = {})
+    FetchRemoteStatusService.new.call(child_url, request_id: options['request_id'])
   end
 end

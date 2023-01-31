@@ -3,11 +3,10 @@
 class ActivityPub::ProcessAccountService < BaseService
   include JsonLdHelper
   include DomainControlHelper
-  include Redisable
+  include DiscoveryLimitConcern
   include Lockable
 
   SUBDOMAINS_RATELIMIT = 10
-  DISCOVERIES_PER_REQUEST = 400
 
   # Should be called with confirmed valid JSON
   # and WebFinger-resolved username and domain
@@ -24,7 +23,7 @@ class ActivityPub::ProcessAccountService < BaseService
     @actor_host  = Addressable::URI.parse(@uri).host
 
     # The key does not need to be unguessable, it just needs to be somewhat unique
-    @options[:request_id] ||= "#{Time.now.utc.to_i}-#{username}@#{domain}"
+    @options[:request_id] ||= request_id_from_uri(@uri)
 
     with_lock("process_account:#{@uri}") do
       @account            = Account.remote.find_by(uri: @uri) if @options[:only_key]
@@ -35,12 +34,10 @@ class ActivityPub::ProcessAccountService < BaseService
 
       if @account.nil?
         second_and_top_level_domain = PublicSuffix.domain(@domain, ignore_private: true) || :invalid_domain
-        with_redis do |redis|
-          return nil if redis.pfcount("unique_subdomains_for:#{second_and_top_level_domain}") >= SUBDOMAINS_RATELIMIT
-
-          discoveries = redis.incr("discovery_per_request:#{@options[:request_id]}")
-          redis.expire("discovery_per_request:#{@options[:request_id]}", 5.minutes.seconds)
-          return nil if discoveries > DISCOVERIES_PER_REQUEST
+        check_rate_limit!(@options[:request_id]) do |redis|
+          if redis.pfcount("unique_subdomains_for:#{second_and_top_level_domain}") >= SUBDOMAINS_RATELIMIT
+            raise Mastodon::RateLimitExceededError
+          end
         end
 
         create_account
@@ -64,7 +61,7 @@ class ActivityPub::ProcessAccountService < BaseService
     end
 
     @account
-  rescue Oj::ParseError
+  rescue Oj::ParseError, Mastodon::RateLimitExceededError
     nil
   end
 

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class ActivityPub::Activity::Create < ActivityPub::Activity
+  include DiscoveryLimitConcern
   include FormattingHelper
 
   def perform
@@ -47,6 +48,9 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   def create_status
     return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity?
 
+    @options[:request_id] ||= request_id_from_uri(object_uri)
+    check_rate_limit!(@options[:request_id])
+
     with_lock("create:#{object_uri}") do
       return if delete_arrived_first?(object_uri) || poll_vote?
 
@@ -60,6 +64,8 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     end
 
     @status
+  rescue Mastodon::RateLimitExceededError
+    reject_payload!
   end
 
   def audience_parser
@@ -346,18 +352,20 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   def resolve_thread(status)
     return unless status.reply? && status.thread.nil? && Request.valid_url?(in_reply_to_uri)
 
-    ThreadResolveWorker.perform_async(status.id, in_reply_to_uri)
+    ThreadResolveWorker.perform_async(status.id, in_reply_to_uri, { 'request_id' => @options[:request_id] })
   end
 
   def fetch_replies(status)
     collection = @object['replies']
     return if collection.nil?
 
-    replies = ActivityPub::FetchRepliesService.new.call(status, collection, false)
+    replies = ActivityPub::FetchRepliesService.new.call(status, collection, false, request_id: @options[:request_id])
     return unless replies.nil?
 
     uri = value_or_id(collection)
-    ActivityPub::FetchRepliesWorker.perform_async(status.id, uri) unless uri.nil?
+    return if uri.nil?
+
+    ActivityPub::FetchRepliesWorker.perform_async(status.id, uri, { 'request_id' => @options[:request_id] })
   end
 
   def conversation_from_uri(uri)

@@ -3,14 +3,16 @@
 class ActivityPub::FetchRepliesService < BaseService
   include JsonLdHelper
 
-  def call(parent_status, collection_or_uri, allow_synchronous_requests = true)
+  def call(parent_status, collection_or_uri, allow_synchronous_requests = true, request_id: nil)
     @account = parent_status.account
     @allow_synchronous_requests = allow_synchronous_requests
 
     @items = collection_items(collection_or_uri)
     return if @items.nil?
 
-    FetchReplyWorker.push_bulk(filtered_replies)
+    filter_replies!
+
+    FetchReplyWorker.perform_bulk(@items.map { |item| [item, { 'request_id' => request_id }] })
 
     @items
   end
@@ -39,11 +41,13 @@ class ActivityPub::FetchRepliesService < BaseService
     fetch_resource_without_id_validation(collection_or_uri, nil, true)
   end
 
-  def filtered_replies
+  def filter_replies!
     # Only fetch replies to the same server as the original status to avoid
     # amplification attacks.
 
-    # Also limit to 5 fetched replies to limit potential for DoS.
-    @items.map { |item| value_or_id(item) }.reject { |uri| invalid_origin?(uri) }.take(5)
+    # Vanilla Mastodon only fetches the first 5 items. We relax the limit to 8.
+    @items.map! { |item| value_or_id(item) }
+    @items.reject! { |uri| invalid_origin?(uri) }
+    @items = @items.take(8)
   end
 end

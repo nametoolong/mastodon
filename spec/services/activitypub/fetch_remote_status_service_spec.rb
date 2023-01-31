@@ -20,13 +20,11 @@ RSpec.describe ActivityPub::FetchRemoteStatusService, type: :service do
 
   subject { described_class.new }
 
-  before do
-    stub_request(:get, 'https://foo.bar/watch?v=12345').to_return(status: 404, body: '')
-    stub_request(:get, object[:id]).to_return(body: Oj.dump(object))
-  end
-
   describe '#call' do
     before do
+      stub_request(:get, 'https://foo.bar/watch?v=12345').to_return(status: 404, body: '')
+      stub_request(:get, object[:id]).to_return(body: Oj.dump(object))
+
       existing_status
       subject.call(object[:id], prefetched_body: Oj.dump(object))
     end
@@ -223,4 +221,74 @@ RSpec.describe ActivityPub::FetchRemoteStatusService, type: :service do
       end
     end
   end
+
+  context 'when status references other statuses' do
+    before do
+      stub_const 'DiscoveryLimitConcern::DISCOVERIES_PER_REQUEST', 10
+    end
+
+    let(:payload) do
+      {
+        '@context': ['https://www.w3.org/ns/activitystreams'],
+        id: 'https://foo.test/users/1',
+        type: 'Person',
+        inbox: 'https://foo.test/inbox',
+        featured: 'https://foo.test/users/1/featured',
+        preferredUsername: 'user1',
+      }.with_indifferent_access
+    end
+
+    before do
+      15.times do |i|
+        actor_json = {
+          '@context': ['https://www.w3.org/ns/activitystreams'],
+          id: "https://foo.test/users/#{i}",
+          type: 'Person',
+          inbox: 'https://foo.test/inbox',
+          preferredUsername: "user#{i}",
+        }.with_indifferent_access
+        replies_json = {
+          id: "https://foo.test/users/#{i}/status/replies",
+          type: 'Collection',
+          first: {
+            type: 'CollectionPage',
+            items: [*(i + 2)..(i + 8)].keep_if { |j| j != i && j < 15  }.map { |j| "https://foo.test/users/#{j}/status" }
+          }
+        }.with_indifferent_access
+        status_json = {
+          '@context': ['https://www.w3.org/ns/activitystreams'],
+          id: "https://foo.test/users/#{i}/status",
+          attributedTo: "https://foo.test/users/#{i}",
+          type: 'Note',
+          content: "@user#{i + 1} test",
+          tag: [
+            {
+              type: 'Mention',
+              href: "https://foo.test/users/#{i + 1}",
+              name: "@user#{i + 1 }",
+            }
+          ],
+          to: [ 'as:Public', "https://foo.test/users/#{i + 1}" ],
+          replies: replies_json
+        }.with_indifferent_access
+        webfinger = {
+          subject: "acct:user#{i}@foo.test",
+          links: [{ rel: 'self', href: "https://foo.test/users/#{i}" }],
+        }.with_indifferent_access
+        stub_request(:get, "https://foo.test/users/#{i}").to_return(status: 200, body: actor_json.to_json, headers: { 'Content-Type': 'application/activity+json' })
+        stub_request(:get, "https://foo.test/users/#{i}/status").to_return(status: 200, body: status_json.to_json, headers: { 'Content-Type': 'application/activity+json' })
+        stub_request(:get, "https://foo.test/users/#{i}/status/replies").to_return(status: 200, body: replies_json.to_json, headers: { 'Content-Type': 'application/activity+json' })
+        stub_request(:get, "https://foo.test/.well-known/webfinger?resource=acct:user#{i}@foo.test").to_return(body: webfinger.to_json, headers: { 'Content-Type': 'application/jrd+json' })
+      end
+    end
+
+    it 'creates at least some statuses' do
+      expect { subject.call('https://foo.test/users/1/status') }.to change { Status.count }.by_at_least(3)
+    end
+
+    it 'creates no more statuses than the limit allows' do
+      expect { subject.call('https://foo.test/users/1/status') }.to change { Status.count }.by_at_most(10)
+    end
+  end
+
 end

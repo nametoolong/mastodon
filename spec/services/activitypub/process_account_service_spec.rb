@@ -138,7 +138,7 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
 
   context 'accounts referencing other accounts' do
     before do
-      stub_const 'ActivityPub::ProcessAccountService::DISCOVERIES_PER_REQUEST', 5
+      stub_const 'DiscoveryLimitConcern::DISCOVERIES_PER_REQUEST', 10
     end
 
     let(:payload) do
@@ -153,7 +153,7 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
     end
 
     before do
-      8.times do |i|
+      15.times do |i|
         actor_json = {
           '@context': ['https://www.w3.org/ns/activitystreams'],
           id: "https://foo.test/users/#{i}",
@@ -200,7 +200,7 @@ RSpec.describe ActivityPub::ProcessAccountService, type: :service do
     end
 
     it 'creates no more account than the limit allows' do
-      expect { subject.call('user1', 'foo.test', payload) }.to change { Account.remote.count }.by_at_most(5)
+      expect { subject.call('user1', 'foo.test', payload) }.to change { Account.remote.count }.by_at_most(10)
     end
   end
 end

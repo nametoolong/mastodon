@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
 class ActivityPub::Activity::Announce < ActivityPub::Activity
+  include DiscoveryLimitConcern
+
   def perform
     return reject_payload! if delete_arrived_first?(@json['id']) || !related_to_local_activity?
 
-    with_lock("announce:#{value_or_id(@object)}") do
+    @options[:request_id] ||= request_id_from_uri(object_uri)
+    check_rate_limit!(@options[:request_id])
+
+    with_lock("announce:#{object_uri}") do
       original_status = status_from_object
 
       return reject_payload! if original_status.nil? || !announceable?(original_status)
@@ -35,6 +40,8 @@ class ActivityPub::Activity::Announce < ActivityPub::Activity
     end
 
     @status
+  rescue Mastodon::RateLimitExceededError
+    reject_payload!
   end
 
   private

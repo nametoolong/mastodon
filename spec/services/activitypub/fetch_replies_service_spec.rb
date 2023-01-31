@@ -1,5 +1,11 @@
 require 'rails_helper'
 
+RSpec::Matchers.define :valid_replies do |expected|
+  match do |actual|
+    actual.map(&:first) == expected
+  end
+end
+
 RSpec.describe ActivityPub::FetchRepliesService, type: :service do
   let(:actor)          { Fabricate(:account, domain: 'example.com', uri: 'http://example.com/account') }
   let(:status)         { Fabricate(:status, account: actor) }
@@ -16,6 +22,10 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
       'http://example.com/self-reply-4',
       'http://example.com/self-reply-5',
       'http://example.com/self-reply-6',
+      'http://example.com/self-reply-7',
+      'http://example.com/self-reply-8',
+      'http://example.com/self-reply-9',
+      'http://example.com/self-reply-10',
     ]
   end
 
@@ -33,8 +43,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
   describe '#call' do
     context 'when the payload is a Collection with inlined replies' do
       context 'when passing the collection itself' do
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, payload)
         end
       end
@@ -44,8 +54,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
           stub_request(:get, collection_uri).to_return(status: 200, body: Oj.dump(payload))
         end
 
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, collection_uri)
         end
       end
@@ -62,8 +72,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
       end
 
       context 'when passing the collection itself' do
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, payload)
         end
       end
@@ -73,8 +83,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
           stub_request(:get, collection_uri).to_return(status: 200, body: Oj.dump(payload))
         end
 
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, collection_uri)
         end
       end
@@ -95,8 +105,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
       end
 
       context 'when passing the collection itself' do
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, payload)
         end
       end
@@ -106,8 +116,8 @@ RSpec.describe ActivityPub::FetchRepliesService, type: :service do
           stub_request(:get, collection_uri).to_return(status: 200, body: Oj.dump(payload))
         end
 
-        it 'spawns workers for up to 5 replies on the same server' do
-          expect(FetchReplyWorker).to receive(:push_bulk).with(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5'])
+        it 'spawns workers for up to 8 replies on the same server' do
+          expect(FetchReplyWorker).to receive(:perform_bulk).with(valid_replies(['http://example.com/self-reply-1', 'http://example.com/self-reply-2', 'http://example.com/self-reply-3', 'http://example.com/self-reply-4', 'http://example.com/self-reply-5', 'http://example.com/self-reply-6', 'http://example.com/self-reply-7', 'http://example.com/self-reply-8']))
           subject.call(status, collection_uri)
         end
       end
