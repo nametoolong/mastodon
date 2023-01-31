@@ -16,7 +16,7 @@ Nuage is still very experimental. **Use at your own risk!**
 
 * [Nokolexbor](https://github.com/serpapi/nokolexbor) instead of Nokogiri in Premailer processing.
 
-* A rewrite of federation code, which aims to leverage the full expressive power of ActivityPub, instead of Mastodon-style experience for everyone throughout the Fediverse.
+* Extensions to ActivityPub code which aim to leverage the full expressive power of ActivityPub, instead of infesting the Fediverse with Mastodon-specific UX.
 
 * A record cache for status distribution. This slightly reduced database load when handling new statuses.
 
