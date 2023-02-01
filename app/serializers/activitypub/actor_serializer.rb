@@ -147,6 +147,6 @@ class ActivityPub::ActorSerializer < ActivityPub::Serializer
       }
     end
 
-    [emojis + tags].tap(&:flatten!)
+    [emojis, tags].tap(&:flatten!)
   end
 end
