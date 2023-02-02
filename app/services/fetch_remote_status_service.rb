@@ -9,8 +9,10 @@ class FetchRemoteStatusService < BaseService
       resource_options = { prefetched_body: prefetched_body }
     end
 
+    return if resource_url.nil?
+
     resource_options.merge!(request_id: request_id)
 
-    ActivityPub::FetchRemoteStatusService.new.call(resource_url, **resource_options) unless resource_url.nil?
+    ActivityPub::FetchRemoteStatusService.new.call(resource_url, **resource_options)
   end
 end
