@@ -4,9 +4,21 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
   include FormattingHelper
   include RoutingHelper
 
-  context_extension :atom_uri, :conversation, :hashtag, :sensitive, :voters_count
+  context_extension :atom_uri, :conversation, :sensitive, :voters_count
 
-  use_contexts_from ActivityPub::EmojiSerializer
+  class InlineTagSerializer < ActivityPub::Serializer
+    show_if ->(model) { model.is_a?(CustomEmoji) } do
+      merge :itself, with: ActivityPub::EmojiSerializer
+    end
+
+    show_if ->(model) { model.is_a?(Mention) } do
+      merge :itself, with: ActivityPub::MentionSerializer
+    end
+
+    show_if ->(model) { model.is_a?(Tag) } do
+      merge :itself, with: ActivityPub::HashtagSerializer
+    end
+  end
 
   class MediaAttachmentSerializer < ActivityPub::Serializer
     include RoutingHelper
@@ -69,9 +81,8 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
 
   serialize :attributedTo, from: :attributed_to
 
+  serialize :tag, with: InlineTagSerializer
   serialize :attachment, from: :ordered_media_attachments, with: MediaAttachmentSerializer
-
-  serialize :tag
 
   show_if ->(model) { model.language.present? } do
     serialize :contentMap, from: :content_map
@@ -173,25 +184,7 @@ class ActivityPub::NoteSerializer < ActivityPub::Serializer
   end
 
   def tag
-    mentions = model.active_mentions.to_a.sort_by!(&:id).map! do |mention|
-      {
-         type: 'Mention',
-         href: ActivityPub::TagManager.instance.uri_for(mention.account),
-         name: "@#{mention.account.acct}"
-      }
-    end
-
-    tags = model.tags.map do |tag|
-      {
-         type: 'Hashtag',
-         href: tag_url(tag),
-         name: "##{tag.name}"
-      }
-    end
-
-    emojis = CacheCrispies::Collection.new(model.emojis, ActivityPub::EmojiSerializer).as_json
-
-    [mentions, tags, emojis].tap(&:flatten!)
+    [model.active_mentions.to_a.sort_by!(&:id), model.tags, model.emojis].tap(&:flatten!)
   end
 
   def atom_uri

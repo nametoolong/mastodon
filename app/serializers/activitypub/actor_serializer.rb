@@ -1,15 +1,22 @@
 # frozen_string_literal: true
 
 class ActivityPub::ActorSerializer < ActivityPub::Serializer
-  include RoutingHelper
   include FormattingHelper
+  include RoutingHelper
 
   context :security
   context_extension :manually_approves_followers, :featured, :also_known_as,
-                    :moved_to, :property_value, :discoverable, :olm, :suspended,
-                    :hashtag
+                    :moved_to, :property_value, :discoverable, :olm, :suspended
 
-  use_contexts_from ActivityPub::EmojiSerializer
+  class InlineTagSerializer < ActivityPub::Serializer
+    show_if ->(model) { model.is_a?(CustomEmoji) } do
+      merge :itself, with: ActivityPub::EmojiSerializer
+    end
+
+    show_if ->(model) { model.is_a?(Tag) } do
+      merge :itself, with: ActivityPub::HashtagSerializer
+    end
+  end
 
   serialize :type do |model|
     if model.instance_actor?
@@ -40,10 +47,10 @@ class ActivityPub::ActorSerializer < ActivityPub::Serializer
   end
 
   show_if ->(model) { !(model.instance_actor? || model.suspended?) } do
-    serialize :following, :followers, :devices, :featured
+    serialize :attachment, :following, :followers, :devices, :featured
     serialize :featuredTags, from: :featured_tags
 
-    serialize :attachment, :tag
+    serialize :tag, with: InlineTagSerializer
 
     show_if ->(model) { model.moved? } do
       serialize :movedTo, from: :moved_to
@@ -137,16 +144,6 @@ class ActivityPub::ActorSerializer < ActivityPub::Serializer
   end
 
   def tag
-    emojis = CacheCrispies::Collection.new(model.emojis, ActivityPub::EmojiSerializer).as_json
-
-    tags = model.tags.map do |tag|
-      {
-         type: 'Hashtag',
-         href: tag_url(tag),
-         name: "##{tag.name}"
-      }
-    end
-
-    [emojis, tags].tap(&:flatten!)
+    [model.emojis, model.tags].tap(&:flatten!)
   end
 end
