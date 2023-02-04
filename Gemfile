@@ -26,7 +26,7 @@ gem 'blurhash', '~> 0.1'
 
 gem 'addressable', '~> 2.8'
 gem 'blueprinter-rb', '~> 1.0.0', require: 'blueprinter'
-gem 'bootsnap', '~> 1.15.0', require: false
+gem 'bootsnap', '~> 1.16.0', require: false
 gem 'browser'
 gem 'cache_crispies', '~> 1.4.0'
 gem 'charlock_holmes', '~> 0.7.7'

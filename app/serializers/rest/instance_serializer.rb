@@ -35,6 +35,7 @@ class REST::InstanceSerializer < Blueprinter::Base
     {
       urls: {
         streaming: Rails.configuration.x.streaming_api_base_url,
+        status: object.status_page_url,
       },
 
       accounts: {

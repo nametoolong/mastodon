@@ -6,6 +6,7 @@ class InstancePresenter < SitePresenter
     site_contact_email
     site_contact_username
     site_short_description
+    status_page_url
   ).freeze
 
   ContactPresenter = Struct.new(:email, :account)
@@ -26,6 +27,10 @@ class InstancePresenter < SitePresenter
 
   def description
     site_settings[:site_short_description]
+  end
+
+  def status_page_url
+    site_settings[:status_page_url]
   end
 
   def languages
