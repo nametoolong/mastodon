@@ -31,7 +31,7 @@ class REST::InstanceSerializer < Blueprinter::Base
     }
   end
 
-  field :configuration do
+  field :configuration do |object|
     {
       urls: {
         streaming: Rails.configuration.x.streaming_api_base_url,
