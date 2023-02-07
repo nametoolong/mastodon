@@ -107,7 +107,7 @@ class REST::AccountSerializer < Blueprinter::Base
   association :roles, blueprint: REST::RoleSerializer, view: :public, if: ->(_name, object, options) {
     object.local?
   } do |object|
-    if object.suspended?
+    if object.suspended? || object.user.nil?
       []
     else
       [object.user.role].tap(&:compact!).keep_if(&:highlighted?)
