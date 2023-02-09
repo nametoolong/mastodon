@@ -16,7 +16,7 @@ module Extractor
     return [] if entities.empty?
 
     entities = remove_overlapping_entities(entities)
-    entities.each(&block) if block_given?
+    entities.each(&block) if block
     entities
   end
 
