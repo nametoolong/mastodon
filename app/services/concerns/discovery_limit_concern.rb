@@ -3,7 +3,7 @@
 module DiscoveryLimitConcern
   include Redisable
 
-  DISCOVERIES_PER_REQUEST = 600
+  DISCOVERIES_PER_REQUEST = 1000
 
   def request_id_from_uri(uri)
     digest = Digest::SHA256.base64digest(uri).slice!(0, 10)
