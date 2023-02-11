@@ -3,7 +3,7 @@
 class ActivityPub::FetchRepliesService < BaseService
   include JsonLdHelper
 
-  def call(parent_status, collection_or_uri, allow_synchronous_requests = true, request_id: nil)
+  def call(parent_status, collection_or_uri, allow_synchronous_requests: true, request_id: nil)
     @account = parent_status.account
     @allow_synchronous_requests = allow_synchronous_requests
 

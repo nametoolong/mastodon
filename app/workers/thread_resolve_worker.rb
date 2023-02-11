@@ -8,7 +8,7 @@ class ThreadResolveWorker
 
   def perform(child_status_id, parent_url, options = {})
     child_status  = Status.find(child_status_id)
-    parent_status = FetchRemoteStatusService.new.call(parent_url, request_id: options['request_id'])
+    parent_status = FetchRemoteStatusService.new.call(parent_url, **options.deep_symbolize_keys)
 
     return if parent_status.nil?
 
