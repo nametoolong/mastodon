@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class ActivityPub::Activity::Create < ActivityPub::Activity
-  include DiscoveryLimitConcern
   include FormattingHelper
 
   def perform
@@ -48,9 +47,6 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
   def create_status
     return reject_payload! if unsupported_object_type? || invalid_origin?(object_uri) || tombstone_exists? || !related_to_local_activity?
 
-    @options[:request_id] ||= request_id_from_uri(object_uri)
-    check_rate_limit!(@options[:request_id])
-
     with_lock("create:#{object_uri}") do
       return if delete_arrived_first?(object_uri) || poll_vote?
 
@@ -64,8 +60,6 @@ class ActivityPub::Activity::Create < ActivityPub::Activity
     end
 
     @status
-  rescue Mastodon::RateLimitExceededError
-    reject_payload!
   end
 
   def audience_parser

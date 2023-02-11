@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class ActivityPub::FetchRemoteStatusService < BaseService
+  include DiscoveryLimitConcern
   include JsonLdHelper
 
   # Should be called when uri has already been checked for locality
@@ -38,11 +39,16 @@ class ActivityPub::FetchRemoteStatusService < BaseService
 
     return if actor.nil? || actor.suspended?
 
+    @request_id ||= request_id_from_uri(object_uri)
+    check_rate_limit!(@request_id)
+
     # If we fetched a status that already exists, then we need to treat the
     # activity as an update rather than create
     activity_json['type'] = 'Update' if equals_or_includes_any?(activity_json['type'], %w(Create)) && Status.where(uri: object_uri, account_id: actor.id).exists?
 
-    ActivityPub::Activity.factory(activity_json, actor, request_id: request_id).perform
+    ActivityPub::Activity.factory(activity_json, actor, request_id: @request_id).perform
+  rescue Mastodon::RateLimitExceededError
+    nil
   end
 
   private
